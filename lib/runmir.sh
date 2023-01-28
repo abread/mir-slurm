@@ -9,13 +9,8 @@ usage() {
     exit 1
 }
 
-cleanup() {
-    rm -rf "$RUNMIR_TMPDIR"
-}
-
 case "$RUNMIR_CURRENT_OP" in
     salloc)
-        [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
         [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
         [ -n "$RUNMIR_BATCH_SIZE" ] || (echo "missing variable RUNMIR_BATCH_SIZE"; exit 1)
         [ -n "$RUNMIR_PORT" ] || (echo "missing variable RUNMIR_PORT"; exit 1)
@@ -29,25 +24,19 @@ case "$RUNMIR_CURRENT_OP" in
         # generate membership list
         i=0
         for hostname in $server_nodes; do
-            echo "${i} /dns4/${hostname}/tcp/${RUNMIR_PORT}" >> "${RUNMIR_TMPDIR}/membership"
+            echo "${i} /dns4/${hostname}/tcp/${RUNMIR_PORT}" >> membership
             i=$(( i + 1 ))
         done
 
         # run server nodes
         echo "$(date): starting replicas" >&2
-        (
-            export RUNMIR_CURRENT_OP=srun_server
-            srun --het-group=0 -- "$0"
-        ) &
+        srun --het-group=0 -- ./run-bench-node.sh -b "$RUNMIR_BATCH_SIZE" -p "$RUNMIR_PROTOCOL" -o - --statPeriod 5s -m membership &
 
         sleep 5 # give them some time to start up
 
         echo "$(date): starting clients" >&2
         # run client nodes to completion
-        (
-            export RUNMIR_CURRENT_OP=srun_client
-            srun --het-group=1 -- "$0"
-        )
+        srun --het-group=1 -- ./run-bench-client.sh $RUNMIR_CLIENT_ARGS
 
         echo "$(date): clients done, cooling down" >&2
         # give it some time to cool down
@@ -55,32 +44,7 @@ case "$RUNMIR_CURRENT_OP" in
 
         exit 0
         ;;
-    srun_server)
-        [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
-        [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
-        [ -n "$RUNMIR_BATCH_SIZE" ] || (echo "missing variable RUNMIR_BATCH_SIZE"; exit 1)
-        ID="$(cat "${RUNMIR_TMPDIR}/membership" | grep -E "/dns4/$(hostname)/" | cut -d' ' -f1)"
-
-        echo "$ID = $(hostname)" >&2
-        if [ -z "$ID" ]; then
-            cat "${RUNMIR_TMPDIR}/membership" >&2
-	fi
-
-        exec ./bench node -p "${RUNMIR_PROTOCOL}" -i "$ID" -m "${RUNMIR_TMPDIR}/membership" -b ${RUNMIR_BATCH_SIZE} --statPeriod 5s ${RUNMIR_SERVER_ARGS} | sed "s/^/n$ID,/"
-        ;;
-
-    srun_client)
-        [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
-        [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
-        [ -n "$SLURM_PROCID" ] || (echo "missing variable SLURM_PROCID"; exit 1)
-
-        exec ./bench client -i "$SLURM_PROCID" -m "${RUNMIR_TMPDIR}/membership" ${RUNMIR_CLIENT_ARGS}
-        ;;
-
     *)
-        export RUNMIR_TMPDIR="$(mktemp -d -p "$CLUSTER_HOME")"
-        trap cleanup EXIT
-
         export RUNMIR_PORT=4242
         export RUNMIR_F=0
         export RUNMIR_BATCH_SIZE=1024
@@ -117,9 +81,7 @@ case "$RUNMIR_CURRENT_OP" in
         slurm_client_tasks=$RUNMIR_N_CLIENTS
 
         export RUNMIR_CURRENT_OP=salloc
-        salloc -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab4p[1-10],lab6p[1-9],lab7p[1-9]' -N $slurm_server_nodes --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t 6 : \
-               -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[1-9],lab7p[1-9]' -n $slurm_client_tasks --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t 6  -- "$0"
-
-        rm -rf $RUNMIR_TMPDIR
+        exec salloc -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab4p[1-10],lab6p[1-9],lab7p[1-9]' -N $slurm_server_nodes --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t 6 : \
+               -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[1-9],lab7p[1-9]' -n "$slurm_client_tasks" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t 6  -- "$0"
         ;;
 esac

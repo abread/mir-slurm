@@ -113,7 +113,7 @@ runone() {
     r="$(( l / n_cli ))"
 
     local out_name="${p}_f${f}_l${l}_b${b}_ncli${n_cli}_burst${burst}_120s"
-    export RUNMIR_CLIENT_ARGS="-T 120s -b $burst -r $r"
+    export RUNMIR_CLIENT_ARGS="-T 120s -b $burst -r $r -s 256"
 
     echo "RUNNING: runone $*"
     echo "./runmir.sh -p $p -c $n_cli -b $b -f $f with client args: ${RUNMIR_CLIENT_ARGS} -> $out_name"
