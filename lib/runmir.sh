@@ -16,7 +16,6 @@ cleanup() {
 case "$RUNMIR_CURRENT_OP" in
     salloc)
         [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
-        [ -x "$RUNMIR_BENCH_EXEC" ] || (echo "missing variable RUNMIR_BENCH_EXEC or it's not a path to an executable"; exit 1)
         [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
         [ -n "$RUNMIR_BATCH_SIZE" ] || (echo "missing variable RUNMIR_BATCH_SIZE"; exit 1)
         [ -n "$RUNMIR_PORT" ] || (echo "missing variable RUNMIR_PORT"; exit 1)
@@ -35,7 +34,7 @@ case "$RUNMIR_CURRENT_OP" in
         done
 
         # run server nodes
-	echo "$(date): starting replicas" >&2
+        echo "$(date): starting replicas" >&2
         (
             export RUNMIR_CURRENT_OP=srun_server
             srun --het-group=0 -- "$0"
@@ -43,22 +42,21 @@ case "$RUNMIR_CURRENT_OP" in
 
         sleep 5 # give them some time to start up
 
-	echo "$(date): starting clients" >&2
+        echo "$(date): starting clients" >&2
         # run client nodes to completion
         (
             export RUNMIR_CURRENT_OP=srun_client
             srun --het-group=1 -- "$0"
         )
 
-	echo "$(date): clients done, cooling down" >&2
-	# give it some time to cool down 
-	sleep 120
+        echo "$(date): clients done, cooling down" >&2
+        # give it some time to cool down
+        sleep 120
 
         exit 0
         ;;
     srun_server)
         [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
-        [ -x "$RUNMIR_BENCH_EXEC" ] || (echo "missing variable RUNMIR_BENCH_EXEC or it's not a path to an executable"; exit 1)
         [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
         [ -n "$RUNMIR_BATCH_SIZE" ] || (echo "missing variable RUNMIR_BATCH_SIZE"; exit 1)
         ID="$(cat "${RUNMIR_TMPDIR}/membership" | grep -E "/dns4/$(hostname)/" | cut -d' ' -f1)"
@@ -68,23 +66,21 @@ case "$RUNMIR_CURRENT_OP" in
             cat "${RUNMIR_TMPDIR}/membership" >&2
 	fi
 
-        exec "$RUNMIR_BENCH_EXEC" node -p "${RUNMIR_PROTOCOL}" -i "$ID" -m "${RUNMIR_TMPDIR}/membership" -b ${RUNMIR_BATCH_SIZE} --statPeriod 5s ${RUNMIR_SERVER_ARGS} | sed "s/^/n$ID,/"
+        exec ./bench node -p "${RUNMIR_PROTOCOL}" -i "$ID" -m "${RUNMIR_TMPDIR}/membership" -b ${RUNMIR_BATCH_SIZE} --statPeriod 5s ${RUNMIR_SERVER_ARGS} | sed "s/^/n$ID,/"
         ;;
 
     srun_client)
         [ -d "$RUNMIR_TMPDIR" ] || (echo "missing variable RUNMIR_TMPDIR or it's not a path to a directory"; exit 1)
-        [ -x "$RUNMIR_BENCH_EXEC" ] || (echo "missing variable RUNMIR_BENCH_EXEC or it's not a path to an executable"; exit 1)
         [ -n "$RUNMIR_PROTOCOL" ] || (echo "missing variable RUNMIR_PROTOCOL"; exit 1)
         [ -n "$SLURM_PROCID" ] || (echo "missing variable SLURM_PROCID"; exit 1)
-	
-        exec "$RUNMIR_BENCH_EXEC" client -i "$SLURM_PROCID" -m "${RUNMIR_TMPDIR}/membership" ${RUNMIR_CLIENT_ARGS}
+
+        exec ./bench client -i "$SLURM_PROCID" -m "${RUNMIR_TMPDIR}/membership" ${RUNMIR_CLIENT_ARGS}
         ;;
 
     *)
         export RUNMIR_TMPDIR="$(mktemp -d -p "$CLUSTER_HOME")"
         trap cleanup EXIT
 
-        export RUNMIR_BENCH_EXEC="$(pwd)/mir/bin/bench"
         export RUNMIR_PORT=4242
         export RUNMIR_F=0
         export RUNMIR_BATCH_SIZE=1024
@@ -118,11 +114,11 @@ case "$RUNMIR_CURRENT_OP" in
         fi
 
         slurm_server_nodes=$(( 3 * RUNMIR_F + 1 ))
-	slurm_client_tasks=$RUNMIR_N_CLIENTS
+        slurm_client_tasks=$RUNMIR_N_CLIENTS
 
         export RUNMIR_CURRENT_OP=salloc
         salloc -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab4p[1-10],lab6p[1-9],lab7p[1-9]' -N $slurm_server_nodes --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t 6 : \
-	       -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[1-9],lab7p[1-9]' -n $slurm_client_tasks --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t 6  -- "$0"
+               -x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[1-9],lab7p[1-9]' -n $slurm_client_tasks --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t 6  -- "$0"
 
         rm -rf $RUNMIR_TMPDIR
         ;;
