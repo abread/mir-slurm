@@ -26,8 +26,7 @@ OPTS=(
 
 _runscript_main() {
     # parse arguments
-    eval set -- "$(opt_parse OPTS "$0" "$@")"
-    [[ $# -gt 0 ]] && panic "Unexpected options: $*"
+    opt_parse OPTS "$0" "$@"
 
     [[ -e "$OUTPUT_DIR" ]] && panic "OUTPUT_DIR already exists. use retry script instead"
     [[ -x "$BENCH_PATH" ]] || panic "BENCH_PATH is not an executable"

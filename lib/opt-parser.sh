@@ -128,7 +128,7 @@ opt_parse() {
         fi
     done
 
-    _opt_check_defined "$optsname" "$0"
+    [[ $# -gt 0 ]] && panic "Unexpected options: $*"
 
-    echo "$@"
+    _opt_check_defined "$optsname" "$0"
 }

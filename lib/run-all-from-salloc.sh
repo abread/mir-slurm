@@ -23,8 +23,7 @@ OPTS=(
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
 )
-eval set -- "$(opt_parse OPTS "$0" "$@")"
-[[ $# -gt 0 ]] && panic "Unexpected options: $*"
+opt_parse OPTS "$0" "$@"
 
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"

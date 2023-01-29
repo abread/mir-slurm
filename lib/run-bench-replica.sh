@@ -20,8 +20,7 @@ OPTS=(
 
     MEMBERSHIP_PATH/m/membership/
 )
-eval set -- "$(opt_parse OPTS "$0" "$@")"
-[[ $# -eq 0 ]] || panic "Unexpected options: $*"
+opt_parse OPTS "$0" "$@"
 
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
 

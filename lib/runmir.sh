@@ -26,8 +26,7 @@ OPTS=(
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
 )
-eval set -- "$(opt_parse OPTS "$0" "$@")"
-[[ $# -gt 0 ]] && panic "Unexpected options: $*"
+opt_parse OPTS "$0" "$@"
 
 [[ $F -lt 0 || $N_CLIENTS -le 0 || $RETRY_COOLDOWN -lt 0 || $COOLDOWN -lt 0 ]] && exit 1
 
