@@ -52,7 +52,7 @@ check_run_ok() {
         (! grep "Requested" "$outdir/run.err" >/dev/null)
     ) || return 1
 
-    for i in $(seq 0 "$N_SERVERS"); do
+    for i in $(seq 0 $(( N_SERVERS - 1))); do
         [[ $(wc -l < "$outdir/$i.csv") -gt 2 ]] || return 1
     done
 }
