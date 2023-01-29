@@ -3,7 +3,7 @@ source "$(dirname "$0")/lib/runscript.sh"
 
 # also save current mir rev just in case
 (
-    cd "$(dirname "$0")../mir"
+    cd "$(dirname "$0")/../mir"
     git rev-parse HEAD > "${OUTPUT_DIR}/mir-version"
     git diff --staged > "${OUTPUT_DIR}/mir-local-changes.patch"
 )
