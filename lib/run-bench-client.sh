@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
+export BENCH_PATH="${BENCH_PATH:-./bench}"
 unset BURST
 unset DURATION
 unset RATE
@@ -32,7 +33,7 @@ while true; do
     esac
 done
 
-if [[ $# -lt 1 ]]; then
+if [[ $# -gt 0 ]]; then
     echo "Unexpected options: $*" >&2
     exit 1
 fi
@@ -44,4 +45,4 @@ done
 
 [[ -z "$ID" ]] && echo "missing ID/SLURM_PROCID" && exit 1
 
-exec ./bench client -b "$BURST" -T "$DURATION" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH"
+exec "$BENCH_PATH" client -b "$BURST" -T "$DURATION" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH"
