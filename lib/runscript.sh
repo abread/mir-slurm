@@ -66,7 +66,7 @@ RUNONE_OPTS=(
     LOAD/l/load/
     COOLDOWN/C/cooldown/60
     BATCH_SIZE/b/replica-batchSize/
-    STAT_PERIOD/P/replica-statPeriod/5s
+    STAT_PERIOD/P/replica-statPeriod/1s
     BURST/B/client-burst/1024
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
