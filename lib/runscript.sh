@@ -1,70 +1,34 @@
 # shellcheck shell=bash
-set -e # fail on errors
+set -e
 
 [[ "${BASH_SOURCE[0]}" == "$0" ]] && (
     echo "this is meant to be sourced at the start of your runscript, not be run directly" >&2
     exit 1
 )
 
-_runscript_usage() {
-    echo "Usage: $0 [ -o | --output-dir <path to non-existing directory> ]
-                   [ -b | --bench-path <path to bench executable> ]" >&2
-    echo >&2
-    echo "Default output dir: $OUTPUT_DIR" >&2
-    echo "Default bench path: $BENCH_PATH" >&2
+source "$(dirname "${BASH_SOURCE[0]}")/opt-parser.sh"
 
-    exit 2
+RUNMIR="$(dirname "${BASH_SOURCE[0]}")/runmir.sh"
+DEFAULT_OUTPUT_DIR="mirbench_$(basename "$0")_$(date +"%F_%R:%S")"
+DEFAULT_BENCH_PATH="$(dirname "${BASH_SOURCE[0]}")/../mir/bin/bench"
+
+panic() {
+    echo "$@" >&2
+    exit 1
 }
 
+OPTS=(
+    OUTPUT_DIR/o/output-dir/"$DEFAULT_OUTPUT_DIR"
+    BENCH_PATH/b/bench-path/"$DEFAULT_BENCH_PATH"
+)
+
 _runscript_main() {
-    OUTPUT_DIR="mirbench_$(basename "$0")_$(date +"%F_%R:%S")"
-    BENCH_PATH="$(dirname "$0")/../mir/bin/bench"
-
     # parse arguments
-    local parsed_args valid_args
-    parsed_args="$(getopt -a -n "$0" -o ho:b: --long help,output-dir:,bench-path: -- "$@")"
-    valid_args=$?
+    eval set -- "$(opt_parse OPTS "$0" "$@")"
+    [[ $# -gt 0 ]] && panic "Unexpected options: $*"
 
-    [[ $valid_args -ne 0 ]] && _runscript_usage
-
-    eval set -- "$parsed_args"
-    while true; do
-        case "$1" in
-            -h | --help)
-                _runscript_usage
-                ;;
-            -o | --output-dir)
-                OUTPUT_DIR="$2"
-                shift 2
-                ;;
-            -b | --bench-path)
-                BENCH_PATH="$2"
-                shift 2
-                ;;
-            --) # end of arguments
-                shift
-                break
-                ;;
-            *)
-                echo "Unexpected option: $1" >&2
-                _runscript_usage
-                ;;
-        esac
-    done
-
-    [[ -e "$OUTPUT_DIR" ]] && (
-        echo "Output directory already exists: ${OUTPUT_DIR}" >&2
-        echo "Specify a different one with -o / --output-dir" >&2
-        echo >&2
-        _runscript_usage
-    )
-
-    [[ -x "$BENCH_PATH" ]] || (
-        echo "Mir bench executable does not exist at ${BENCH_PATH}" >&2
-        echo "Specify it with -b / --bench-path" >&2
-        echo >&2
-        _runscript_usage
-    )
+    [[ -e "$OUTPUT_DIR" ]] && panic "OUTPUT_DIR already exists. use retry script instead"
+    [[ -x "$BENCH_PATH" ]] || panic "BENCH_PATH is not an executable"
 
     echo "Output will be saved in ${OUTPUT_DIR}"
     echo "Mir bench to be used is ${BENCH_PATH}"
@@ -76,73 +40,70 @@ _runscript_main() {
     # and to allow changing scripts mid-run with some safety
     cp --reflink=auto -a "$(dirname "${BASH_SOURCE[0]}")" "${OUTPUT_DIR}/scripts-saved"
     cp --reflink=auto "$BENCH_PATH" "${OUTPUT_DIR}/scripts-saved/bench"
+    BENCH_PATH="${OUTPUT_DIR}/scripts-saved/bench"
 
     # preserve run script
     cp --reflink=auto "$0" "${OUTPUT_DIR}/scripts-saved/_run.sh"
-    sed -i -E "s|^(\\s*)source (.*/)?runscript.sh(['\"\\s]*)$|source ./runscript.sh|" "${OUTPUT_DIR}/scripts-saved/_run.sh"
+    sed -i -E 's|^(\\s*)source (.*/)?runscript.sh(['"'"'"\s]*)$|source "$(dirname "$0")/runscript.sh"|' "${OUTPUT_DIR}/scripts-saved/_run.sh"
+    chmod +x "${OUTPUT_DIR}/scripts-saved/_run.sh"
 
     # hand over execution to preserved scripts
-    OUTPUT_DIR="$(realpath "$OUTPUT_DIR")"
-    cd "${OUTPUT_DIR}/scripts-saved"
-
-    chmod +x _run.sh
+    export __RUNNING_RUNSCRIPT=1
     export OUTPUT_DIR
-    exec ./_run.sh
+    export BENCH_PATH
+    exec "${OUTPUT_DIR}/scripts-saved/_run.sh"
 }
 
-_runscript_run_ok() {
-    local outfile="$1"
-    local errfile="$2"
-
-    [[ -f "$outfile" ]] && \
-    [[ -f "$errfile" ]] && \
-    [[ $(wc -l < "$outfile") -gt 40 ]] && \
-    [[ $(wc -l < "$errfile") -gt 10 ]] && \
-    (! grep "Usage:" "$errfile" >/dev/null) && \
-    (! grep "Requested" "$errfile" >/dev/null)
-}
-
+RUNONE_OPTS=(
+    PROTOCOL/p/replica-protocol/
+    F/f/max-byz-faults/
+    N_CLIENTS/c/num-clients/8
+    LOAD/l/load/
+    COOLDOWN/C/cooldown/60
+    BATCH_SIZE/b/replica-batchSize/
+    STAT_PERIOD/P/replica-statPeriod/5s
+    BURST/B/client-burst/1024
+    DURATION/T/client-duration/120
+    REQ_SIZE/s/client-reqSize/256
+)
 runone() {
-    local p=$1
-    local f=$2
-    local l=$3
-    local n_cli=$4
-    local b=$5
-    local burst=$6
+    local orig_args="$@"
 
-    r="$(( l / n_cli ))"
+    eval set -- "$(opt_parse RUNONE_OPTS "runone" "$@")"
+    [[ $# -eq 0 ]] || panic "runone unknown options: $*"
 
-    local out_name="${p}_f${f}_l${l}_b${b}_ncli${n_cli}_burst${burst}_120s"
-    export RUNMIR_CLIENT_ARGS="-T 120s -b $burst -r $r -s 256"
+    local outdirname=""
+    for opt in "${RUNONE_OPTS[@]}"; do
+        local optvarname optshort
+        optvarname="$(echo "$opt" | cut -d/ -f1)"
+        optshort="$(echo "$opt" | cut -d/ -f2)"
 
-    echo "RUNNING: runone $*"
-    echo "./runmir.sh -p $p -c $n_cli -b $b -f $f with client args: ${RUNMIR_CLIENT_ARGS} -> $out_name"
+        local -n optvar="$optvarname"
 
-    local outfile="${OUTPUT_DIR}/${out_name}.csv"
-    local errfile="${OUTPUT_DIR}/${out_name}.err"
-
-    local attempt=0
-    while (! ./runmir.sh -p "$p" -c "$n_cli" -b "$b" -f "$f" > "$outfile" 2> "$errfile") || (! _runscript_run_ok "$outfile" "$errfile"); do
-        if [[ $attempt -gt 5 ]]; then
-            echo "RUNMIR_CLIENT_ARGS=\"${RUNMIR_CLIENT_ARGS}\" ./runmir-saved.sh -p $p -c $n_cli -b $b -f $f > \"./${out_name}.csv\" 2> \"./${out_name}.err\"" >> "${OUTPUT_DIR}/scripts-saved/_retry_failed.sh"
-            echo "FAILED: runone $*" >&2
-        fi
-
-        sleep 30
-        echo "RETRYING: runone $*" >&2
-        mv "$outfile"{,.bak}
-        mv "$errfile"{,.bak}
-
-        attempt=$((attempt + 1))
+        outdir="${outdir}${optshort}=${optvar}:"
     done
+
+    local wipdir="${OUTPUT_DIR}/WIP:::$outdirname"
+    mkdir "$wipdir"
+
+    echo "runone" "${orig_args[@]}" >&2
+    if "$RUNMIR" -o "$wipdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
+        echo "DONE: runone" "${orig_args[@]}" >&2
+        mv "$wipdir" "${OUTPUT_DIR}/$outdirname"
+    else
+        echo "FAILED: runone" "${orig_args[@]}" >&2
+
+        echo "runone" "${orig_args[@]}" >> "${OUTPUT_DIR}/failed/retry.sh"
+        mv "$wipdir" "${OUTPUT_DIR}/failed/$outdirname"
+    fi
 }
 
-if [[ -z "$OUTPUT_DIR" ]] && [[ "$(pwd)" != "${OUTPUT_DIR}/scripts-saved" ]]; then
+if [[ -z "$__RUNNING_RUNSCRIPT" ]] then
     # first run: we'll copy things over, then execute
     _runscript_main "$@"
     exit 0
 else
-    # we're executing stuff
+    # we'll be running stuff
 
     # kill all child processes when exiting
     trap 'trap - SIGINT SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
