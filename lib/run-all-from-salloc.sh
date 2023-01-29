@@ -70,8 +70,10 @@ for hostname in $server_nodes; do
 done
 
 OUTPUT_DIR="$(realpath "$OUTPUT_DIR")"
-export BENCH_PATH="$(realpath "$BENCH_PATH")"
+BENCH_PATH="$(realpath "$BENCH_PATH")"
 cd "$(dirname "$0")"
+
+export BENCH_PATH
 
 # start replicas
 echo "$(date): starting replicas" >&2
