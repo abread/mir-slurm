@@ -1,4 +1,14 @@
 #!/usr/bin/env bash
+set -e
+
+# ensure mir bench is up-to-date
+if [[ -z "$__RUNNING_RUNSCRIPT" ]]; then
+    (
+        cd "$CLUSTER_HOME/mir"
+        srun -- make bin/bench
+    )
+fi
+
 source "$(dirname "$0")/lib/runscript.sh"
 
 # also save current mir rev just in case
