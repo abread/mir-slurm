@@ -51,7 +51,7 @@ _opt_set_defaults() {
         optdef="$(echo "$opt" | cut -d/ -f 4-)"
 
         if [[ -z "$optdef" ]]; then
-            unset "$optname"
+            unset "$optvarname"
         else
             local -n optvar="$optvarname"
             optvar="$optdef"
