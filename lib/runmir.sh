@@ -49,7 +49,8 @@ check_run_ok() {
         [[ -f "$outdir/run.err" ]] && \
         [[ $(wc -l < "$outdir/run.err") -gt 10 ]] && \
         (! grep "Usage:" "$outdir/run.err" >/dev/null) && \
-        (! grep "Requested" "$outdir/run.err" >/dev/null)
+        (! grep "Requested" "$outdir/run.err" >/dev/null) && \
+        (! grep "failed to CBOR marshal message:" "$outdir/run.log" >/dev/null)
     ) || return 1
 
     for i in $(seq 0 $(( N_SERVERS - 1))); do
