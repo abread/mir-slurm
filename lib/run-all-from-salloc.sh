@@ -1,54 +1,33 @@
 #!/usr/bin/env bash
-
 set -e
+
 panic() {
     echo "$@" >&2
     exit 1
 }
 
-unset LOAD
-unset COOLDOWN
-unset OUTPUT_DIR
-unset BATCH_SIZE
-unset PROTOCOL
-unset STAT_PERIOD
-unset BURST
-unset DURATION
-unset REQ_SIZE
+source "$(dirname "$0")/opt-parser.sh"
 
-# parse arguments
-PARSED_ARGS="$(getopt -a -n "$0" -o l:C:o:b:p:P:B:T:s: --long load:,cooldown:,outputDir:,batchSize:,protocol:,statPeriod:,burst:,duration:,reqSize: -- "$@")"
-VALID_ARGS=$?
+# OPTS is used by opt_parse
+# shellcheck disable=SC2034
+OPTS=(
+    BENCH_PATH/M/mirBenchPath/
+    OUTPUT_DIR/o/outputDir/
 
-[[ $VALID_ARGS -ne 0 ]] && panic "bad args"
-
-eval set -- "$PARSED_ARGS"
-while true; do
-    case "$1" in
-        -l | --load) LOAD="$2"; shift 2 ;;
-        -C | --cooldown) COOLDOWN="$2"; shift 2 ;;
-        -o | --outputDir) OUTPUT_DIR="$2"; shift 2 ;;
-        -b | --batchSize) BATCH_SIZE="$2"; shift 2 ;;
-        -p | --protocol) PROTOCOL="$2"; shift 2 ;;
-        -P | --statPeriod) STAT_PERIOD="$2"; shift 2 ;;
-        -B | --burst) BURST="$2"; shift 2 ;;
-        -T | --duration) DURATION="$2"; shift 2 ;;
-        -s | --reqSize) REQ_SIZE="$2"; shift 2 ;;
-
-        # end of arguments
-        --) shift; break ;;
-        *)
-            echo "Unexpected option: $1" >&2
-            exit 1
-            ;;
-    esac
-done
-
+    PROTOCOL/p/replica-protocol/
+    LOAD/l/load/
+    COOLDOWN/C/cooldown/60
+    BATCH_SIZE/b/replica-batchSize/
+    STAT_PERIOD/P/replica-statPeriod/5s
+    BURST/B/client-burst/1024
+    DURATION/T/client-duration/120
+    REQ_SIZE/s/client-reqSize/256
+)
+eval set -- "$(opt_parse OPTS "$0" "$@")"
 [[ $# -gt 0 ]] && panic "Unexpected options: $*"
 
-for v in LOAD COOLDOWN OUTPUT_DIR BATCH_SIZE PROTOCOL STAT_PERIOD BURST DURATION REQ_SIZE SLURM_JOB_NODELIST_HET_GROUP_0 SLURM_JOB_NODELIST_HET_GROUP_1; do
-    (eval '[[ -z $'"$v"' ]]') && panic "missing $v"
-done
+[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
+[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"
 
 # set remaining params
 MIR_PORT=4242
@@ -69,16 +48,13 @@ for hostname in $server_nodes; do
     i=$(( i + 1 ))
 done
 
-OUTPUT_DIR="$(realpath "$OUTPUT_DIR")"
-BENCH_PATH="$(realpath "$BENCH_PATH")"
-cd "$(dirname "$0")"
-
-export BENCH_PATH
+RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
+RUN_BENCH_CLIENT="$(dirname "$0")/run-bench-client.sh"
 
 # start replicas
 echo "$(date): starting replicas" >&2
 srun --kill-on-bad-exit=1 --het-group=0 -- \
-    ./run-bench-replica.sh -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" &
+    "$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" &
 
 sleep 5 # give them some time to start up
 
@@ -90,9 +66,9 @@ echo "$(date): starting clients" >&2
 # run client nodes to completion
 CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
 srun --kill-on-bad-exit=1 --het-group=1 -- \
-    ./run-bench-client.sh -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
+    "$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
 
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"
 
-exit 0
+# script exit will stop replicas

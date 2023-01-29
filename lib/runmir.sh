@@ -5,34 +5,33 @@ source "$(dirname "$0")/opt-parser.sh"
 
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-5}"
 RETRY_COOLDOWN="${RETRY_COOLDOWN:-30}"
-BENCH_PATH="${BENCH_PATH:-$(dirname "$0")/../../mir/bin/bench}"
-export BENCH_PATH
 
 DEFAULT_OUTPUT_DIR="$(basename "$0"):$(date +"%F_%R:%S"):$(echo "$@" | tr ' ' ':')"
+DEFAULT_BENCH_PATH="$(dirname "$0")/../../mir/bin/bench"
 
 # OPTS is used by opt_parse
 # shellcheck disable=SC2034
 OPTS=(
+    BENCH_PATH/M/mirBenchPath/"$DEFAULT_BENCH_PATH"
+    OUTPUT_DIR/o/outputDir/"$DEFAULT_OUTPUT_DIR"
+
     PROTOCOL/p/replica-protocol/
     F/f/max-byz-faults/
     N_CLIENTS/c/num-clients/8
     LOAD/l/load/
     COOLDOWN/C/cooldown/60
-    OUTPUT_DIR/o/outputDir/"$DEFAULT_OUTPUT_DIR"
     BATCH_SIZE/b/replica-batchSize/
     STAT_PERIOD/P/replica-statPeriod/5s
     BURST/B/client-burst/1024
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
 )
-opt_parse OPTS "$0" "$@"
+eval set -- "$(opt_parse OPTS "$0" "$@")"
+[[ $# -gt 0 ]] && panic "Unexpected options: $*"
 
 [[ $F -lt 0 || $N_CLIENTS -le 0 || $RETRY_COOLDOWN -lt 0 || $COOLDOWN -lt 0 ]] && exit 1
 
-SALLOC_SCRIPT="$(realpath "$(dirname "$0")/run-all-from-salloc.sh")"
-BENCH_PATH="$(realpath "$BENCH_PATH")"
-cd "$(dirname "$OUTPUT_DIR")"
-OUTPUT_DIR="$(basename "$OUTPUT_DIR")"
+SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 
 N_SERVERS=$(( 3 * F + 1 ))
 
@@ -41,7 +40,8 @@ CLIENT_NODE_SELECTOR=(-x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[
 
 check_run_ok() {
     local i="$1"
-    local outdir="${i}:${OUTPUT_DIR}"
+    local outdir
+    outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
 
     (
         [[ -f "$outdir/membership" ]] && \
@@ -62,15 +62,16 @@ EXP_DURATION=$(( ( DURATION + COOLDOWN ) / 60 + 2 ))
 
 try_run() {
     local i="$1"
-    local outdir="${i}:${OUTPUT_DIR}"
-    local wipdir="WIP.${outdir}"
+    local outdir wipdir
+    outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
+    wipdir="$(dirname "$OUTPUT_DIR")/WIP.$(basename "$outdir")"
 
-    mkdir -p "$wipdir"
+    mkdir "$wipdir"
 
     salloc \
         "${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
         "${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION  -- \
-        "$SALLOC_SCRIPT" -l "$LOAD" -C "$COOLDOWN" -o "$(realpath "$wipdir")" -b "$BATCH_SIZE" \
+        "$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" \
             -p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "${DURATION}s" -s "$REQ_SIZE" \
         > "${wipdir}/run.log" 2> "${wipdir}/run.err"
 
