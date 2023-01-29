@@ -48,7 +48,7 @@ _runscript_main() {
 
     # i don't want expansions, single quotes are fine
     # shellcheck disable=SC2016
-    sed -i -E 's|^(\\s*)source (.*/)?runscript.sh(['"'"'"\s]*)$|source "$(dirname "$0")/runscript.sh"|' "${OUTPUT_DIR}/scripts-saved/_run.sh"
+    sed -i -E 's|^(\s*)source (.*/)?runscript.sh(['"'"'"\s]*)$|source "$(dirname "$0")/runscript.sh"|' "${OUTPUT_DIR}/scripts-saved/_run.sh"
 
     chmod +x "${OUTPUT_DIR}/scripts-saved/_run.sh"
 
