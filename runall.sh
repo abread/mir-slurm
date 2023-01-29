@@ -3,7 +3,8 @@ source "$(dirname "$0")/lib/runscript.sh"
 
 # also save current mir rev just in case
 (
-    cd "$(dirname "$0")/../mir"
+    OUTPUT_DIR="$(realpath "$OUTPUT_DIR")"
+    cd "$CLUSTER_HOME/mir"
     git rev-parse HEAD > "${OUTPUT_DIR}/mir-version"
     git diff --staged > "${OUTPUT_DIR}/mir-local-changes.patch"
 )
