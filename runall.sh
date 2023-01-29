@@ -2,8 +2,11 @@
 source "$(dirname "$0")/lib/runscript.sh"
 
 # also save current mir rev just in case
-(cd ../mir; git rev-parse HEAD) > "${OUTPUT_DIR}/mir-version"
-(cd ../mir; git diff; git diff --staged) > "${OUTPUT_DIR}/mir-local-changes.patch"
+(
+    cd "$(dirname "$0")../mir"
+    git rev-parse HEAD > "${OUTPUT_DIR}/mir-version"
+    git diff --staged > "${OUTPUT_DIR}/mir-local-changes.patch"
+)
 
 n_cli=8
 burst=1024
