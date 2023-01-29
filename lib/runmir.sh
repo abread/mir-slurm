@@ -79,7 +79,10 @@ try_run() {
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
     if try_run "$i" && check_run_ok "$i"; then
-        mv "${i}:${OUTPUT_DIR}" "${OUTPUT_DIR}"
+        local outdir
+        outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
+
+        mv "$outdir" "${OUTPUT_DIR}"
         break
     fi
 

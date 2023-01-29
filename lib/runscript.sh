@@ -74,8 +74,7 @@ RUNONE_OPTS=(
 runone() {
     local orig_args=("$@")
 
-    eval set -- "$(opt_parse RUNONE_OPTS "runone" "$@")"
-    [[ $# -eq 0 ]] || panic "runone unknown options: $*"
+    opt_parse RUNONE_OPTS "runone" "$@"
 
     local outdirname=""
     for opt in "${RUNONE_OPTS[@]}"; do
