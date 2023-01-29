@@ -17,6 +17,8 @@ panic() {
     exit 1
 }
 
+# OPTS is used by opt_parse
+# shellcheck disable=SC2034
 OPTS=(
     OUTPUT_DIR/o/output-dir/"$DEFAULT_OUTPUT_DIR"
     BENCH_PATH/b/bench-path/"$DEFAULT_BENCH_PATH"
@@ -44,7 +46,11 @@ _runscript_main() {
 
     # preserve run script
     cp --reflink=auto "$0" "${OUTPUT_DIR}/scripts-saved/_run.sh"
+
+    # i don't want expansions, single quotes are fine
+    # shellcheck disable=SC2016
     sed -i -E 's|^(\\s*)source (.*/)?runscript.sh(['"'"'"\s]*)$|source "$(dirname "$0")/runscript.sh"|' "${OUTPUT_DIR}/scripts-saved/_run.sh"
+
     chmod +x "${OUTPUT_DIR}/scripts-saved/_run.sh"
 
     # hand over execution to preserved scripts
@@ -67,7 +73,7 @@ RUNONE_OPTS=(
     REQ_SIZE/s/client-reqSize/256
 )
 runone() {
-    local orig_args="$@"
+    local orig_args=("$@")
 
     eval set -- "$(opt_parse RUNONE_OPTS "runone" "$@")"
     [[ $# -eq 0 ]] || panic "runone unknown options: $*"
@@ -98,7 +104,7 @@ runone() {
     fi
 }
 
-if [[ -z "$__RUNNING_RUNSCRIPT" ]] then
+if [[ -z "$__RUNNING_RUNSCRIPT" ]]; then
     # first run: we'll copy things over, then execute
     _runscript_main "$@"
     exit 0
