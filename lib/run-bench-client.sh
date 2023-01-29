@@ -14,9 +14,9 @@ OPTS=(
     BENCH_PATH/M/mirBenchPath/./bench
 
     RATE/r/rate/
-    BURST/b/client-burst/
-    DURATION/T/client-duration/
-    REQ_SIZE/s/client-reqSize/
+    BURST/b/burst/
+    DURATION/T/duration/
+    REQ_SIZE/s/reqSize/
 
     MEMBERSHIP_PATH/m/membership/
 )

@@ -87,18 +87,14 @@ runone() {
         outdir="${outdir}${optshort}=${optvar}:"
     done
 
-    local wipdir="${OUTPUT_DIR}/WIP:::$outdirname"
-    mkdir "$wipdir"
+    local outdir="${OUTPUT_DIR}/$outdirname"
 
     echo "runone" "${orig_args[@]}" >&2
-    if "$RUNMIR" -o "$wipdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
+    if "$RUNMIR" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
         echo "DONE: runone" "${orig_args[@]}" >&2
-        mv "$wipdir" "${OUTPUT_DIR}/$outdirname"
     else
         echo "FAILED: runone" "${orig_args[@]}" >&2
-
         echo "runone" "${orig_args[@]}" >> "${OUTPUT_DIR}/failed/retry.sh"
-        mv "$wipdir" "${OUTPUT_DIR}/failed/$outdirname"
     fi
 }
 

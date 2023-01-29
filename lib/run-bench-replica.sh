@@ -13,10 +13,10 @@ source "$(dirname "$0")/opt-parser.sh"
 OPTS=(
     BENCH_PATH/M/mirBenchPath/./bench
 
-    PROTOCOL/p/replica-protocol/
-    BATCH_SIZE/b/replica-batchSize/
+    PROTOCOL/p/protocol/
+    BATCH_SIZE/b/batchSize/
     OUTPUT_DIR/o/outputDir/
-    STAT_PERIOD/P/replica-statPeriod/5s
+    STAT_PERIOD/P/statPeriod/5s
 
     MEMBERSHIP_PATH/m/membership/
 )
