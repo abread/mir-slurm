@@ -79,11 +79,13 @@ try_run() {
 }
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
+    RUN_OUT_DIR="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
     if try_run "$i" && sync && sleep "$RETRY_COOLDOWN" && check_run_ok "$i"; then
-        RUN_OUT_DIR="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
-
-        mv "$RUN_OUT_DIR" "${OUTPUT_DIR}"
+        mv "$RUN_OUT_DIR" "$OUTPUT_DIR"
         break
+    else
+        FAIL_OUT_DIR="$(dirname "$OUTPUT_DIR")/FAIL.${i}:$(basename "$OUTPUT_DIR")"
+        mv "$RUN_OUT_DIR" "$FAIL_OUT_DIR"
     fi
 
     echo "run for $OUTPUT_DIR failed, retrying"
