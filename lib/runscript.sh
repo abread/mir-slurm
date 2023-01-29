@@ -90,7 +90,7 @@ runone() {
     local outdir="${OUTPUT_DIR}/$outdirname"
 
     echo "runone" "${orig_args[@]}" >&2
-    if "$RUNMIR" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
+    if "$RUNMIR" -M "$BENCH_PATH" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
         echo "DONE: runone" "${orig_args[@]}" >&2
     else
         echo "FAILED: runone" "${orig_args[@]}" >&2
