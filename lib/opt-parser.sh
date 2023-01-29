@@ -5,7 +5,7 @@
     exit 1
 )
 
-_opt_usage() {
+opt_usage() {
     local -n opts="$1"
     local scriptname="$2"
 
@@ -48,11 +48,12 @@ _opt_set_defaults() {
     for opt in "${opts[@]}"; do
         local optvarname optdef
         optvarname="$(echo "$opt" | cut -d/ -f 1)"
-        local -n optvar="$optvarname"
-
         optdef="$(echo "$opt" | cut -d/ -f 4-)"
 
-        if [[ -n "$optdef" ]]; then
+        if [[ -z "$optdef" ]]; then
+            unset "$optname"
+        else
+            local -n optvar="$optvarname"
             optvar="$optdef"
         fi
     done
@@ -70,7 +71,7 @@ _opt_check_defined() {
 
         if [[ -z "$optvar" ]]; then
             echo "missing ${optvarname}" >&2
-            _opt_usage "$optsname" "$scriptname"
+            opt_usage "$optsname" "$scriptname"
             exit 1
         fi
     done
@@ -97,7 +98,7 @@ opt_parse() {
     parsed_args="$(_opt_parse_args "$optsname" "$scriptname" "$@")"
     valid_args=$?
 
-    [[ $valid_args -ne 0 ]] && _opt_usage "$optsname" "$scriptname" && exit 1
+    [[ $valid_args -ne 0 ]] && opt_usage "$optsname" "$scriptname" && exit 1
 
     eval set -- "$parsed_args"
 
@@ -120,7 +121,7 @@ opt_parse() {
                 --) shift; break ;;
                 *)
                     echo "Unexpected option: $1" >&2
-                    _opt_usage "$optsname" "$scriptname"
+                    opt_usage "$optsname" "$scriptname"
                     exit 1
                     ;;
             esac
@@ -128,4 +129,6 @@ opt_parse() {
     done
 
     _opt_check_defined "$optsname" "$0"
+
+    echo "$@"
 }
