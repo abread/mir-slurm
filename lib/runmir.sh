@@ -78,7 +78,7 @@ try_run() {
 }
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
-    if try_run "$i" && check_run_ok "$i"; then
+    if try_run "$i" && sync && sleep "$RETRY_COOLDOWN" && check_run_ok "$i"; then
         local outdir
         outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
 
@@ -86,6 +86,5 @@ for i in $(seq 0 "$MAX_ATTEMPTS"); do
         break
     fi
 
-    echo "run for $OUTPUT_DIR failed, retrying in $RETRY_COOLDOWN secs"
-    sleep "$RETRY_COOLDOWN"
+    echo "run for $OUTPUT_DIR failed, retrying"
 done
