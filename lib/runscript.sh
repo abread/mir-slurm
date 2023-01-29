@@ -84,7 +84,7 @@ runone() {
 
         local -n optvar="$optvarname"
 
-        outdir="${outdir}${optshort}=${optvar}:"
+        outdirname="${outdirname}${optshort}=${optvar}:"
     done
 
     local outdir="${OUTPUT_DIR}/$outdirname"
