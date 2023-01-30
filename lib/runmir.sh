@@ -54,6 +54,7 @@ check_run_ok() {
     ) || return 1
 
     for i in $(seq 0 $(( N_SERVERS - 1))); do
+        [[ -f "$outdir/$i.csv" ]] || return 1
         [[ $(wc -l < "$outdir/$i.csv") -gt 2 ]] || return 1
     done
 }
