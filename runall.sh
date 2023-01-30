@@ -8,6 +8,7 @@ if [[ -z "$__RUNNING_RUNSCRIPT" ]]; then
         srun -- make bin/bench
     )
 fi
+sync
 
 source "$(dirname "$0")/lib/runscript.sh"
 

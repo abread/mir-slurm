@@ -52,6 +52,9 @@ _runscript_main() {
 
     chmod +x "${OUTPUT_DIR}/scripts-saved/_run.sh"
 
+    # try to hint glusterfs at doing stuff
+    sync
+
     # hand over execution to preserved scripts
     export __RUNNING_RUNSCRIPT=1
     export OUTPUT_DIR
