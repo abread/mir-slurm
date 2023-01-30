@@ -39,15 +39,41 @@ MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 [[ -d "$OUTPUT_DIR" ]] || panic "output dir doesn't exist"
 
 # parse slurm nodelist
-server_nodes="$(eval "echo $(echo "$SLURM_JOB_NODELIST_HET_GROUP_0" | sed -E 's|\],|] |g' | sed -E 's|([^0-9])([0-9]+)-([0-9]+)([^0-9])|\1{\2..\3}\4|g' | sed -E 's/\[/{/g' | sed -E 's/\]/}/g')" | tr ' ' '\n' | tr -d '{}')"
+parse_slurm_nodelist() {
+    local nodes="$1"
+
+    # transform [a,b] ranges into bash expansions ({})
+    nodes="$(echo "$nodes" | sed -E 's \[ { g' | sed -E 's \] } g')"
+
+    # transform [a-b] ranges into bash expansions ({a..b})
+    nodelist_transform_range() {
+        echo "$1" | sed -E 's ([^0-9])([0-9]+)-([0-9]+)([^0-9]) \1{\2..\3}\4 g'
+    }
+    while [[ "$(nodelist_transform_range "$nodes")" != "$nodes" ]]; do
+        nodes="$(nodelist_transform_range "$nodes")"
+    done
+
+    # wrap everything in {} to deal with strings such as lab1p1,lab2p{2,3}
+    # which would expand to lab1p1,lab2p2 lab1p1,lab2p3
+    nodes='{'"$nodes"'}'
+
+    # expand node list
+    nodes="$(eval echo "$nodes")"
+
+    # when expanding constructs like lab1p{{1..2}}, they will result in lab1p{1} lab1p{2}
+    # so we'll remove all the curly braces
+    echo "$nodes" | tr -d '{}'
+}
+
+REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
 
 # generate membership list
 [[ ! -f "$MEMBERSHIP_PATH" ]] || panic "membership file already exists"
 
-i=0
-for hostname in $server_nodes; do
-    echo "${i} /dns4/${hostname}/tcp/${MIR_PORT}" >> "$MEMBERSHIP_PATH"
-    i=$(( i + 1 ))
+REPLICA_ID=0
+for hostname in $REPLICA_NODES; do
+    echo "${REPLICA_ID} /dns4/${hostname}/tcp/${MIR_PORT}" >> "$MEMBERSHIP_PATH"
+    REPLICA_ID=$(( REPLICA_ID + 1 ))
 done
 
 RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
