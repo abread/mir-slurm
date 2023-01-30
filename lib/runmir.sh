@@ -25,10 +25,12 @@ OPTS=(
     BURST/B/client-burst/1024
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
+    VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
 
 [[ $F -lt 0 || $N_CLIENTS -le 0 || $RETRY_COOLDOWN -lt 0 || $COOLDOWN -lt 0 ]] && exit 1
+[[ -n "$VERBOSE" ]] && VERBOSE="-v"
 
 SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 
@@ -73,7 +75,7 @@ try_run() {
         "${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
         "${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION  -- \
         "$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" \
-            -p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "${DURATION}s" -s "$REQ_SIZE" \
+            -p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "${DURATION}s" -s "$REQ_SIZE" $VERBOSE \
         > "${wipdir}/run.log" 2> "${wipdir}/run.err"
 
     mv "$wipdir" "$outdir"

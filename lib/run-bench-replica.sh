@@ -19,8 +19,10 @@ OPTS=(
     STAT_PERIOD/P/statPeriod/5s
 
     MEMBERSHIP_PATH/m/membership/
+    VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
+[[ -n "$VERBOSE" ]] && VERBOSE="-v"
 
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
 
@@ -35,4 +37,4 @@ STATSFILE="${OUTPUT_DIR}/${ID}.csv"
 # try to ensure all files are written before exiting
 trap sync exit
 
-"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "$STAT_PERIOD" -i "$ID" -m "$MEMBERSHIP_PATH"
+"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "$STAT_PERIOD" -i "$ID" -m "$MEMBERSHIP_PATH" $VERBOSE

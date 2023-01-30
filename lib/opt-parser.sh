@@ -19,6 +19,8 @@ opt_usage() {
 
         if [[ -z "$optdef" ]]; then
             echo "           -$optshort | --$optlong $optname" >&2
+        elif [[ "$optdef" == "false" ]]; then
+            echo "         [ -$optshort | --$optlong ]" >&2
         else
             echo "         [ -$optshort | --$optlong $optname (default: $optdef) ]" >&2
         fi
@@ -50,7 +52,7 @@ _opt_set_defaults() {
         optvarname="$(echo "$opt" | cut -d/ -f 1)"
         optdef="$(echo "$opt" | cut -d/ -f 4-)"
 
-        if [[ -z "$optdef" ]]; then
+        if [[ -z "$optdef" ]] || [[ "$optdef" == "false" ]]; then
             unset "$optvarname"
         else
             local -n optvar="$optvarname"
@@ -65,11 +67,12 @@ _opt_check_defined() {
     local scriptname="$2"
 
     for opt in "${opts[@]}"; do
-        local optvarname
+        local optvarname optdef
         optvarname="$(echo "$opt" | cut -d/ -f 1)"
+        optdef="$(echo "$opt" | cut -d/ -f 4-)"
         local -n optvar="$optvarname"
 
-        if [[ -z "$optvar" ]]; then
+        if [[ -z "$optvar" ]] && [[ "$optdef" != "false" ]]; then
             echo "missing ${optvarname}" >&2
             opt_usage "$optsname" "$scriptname"
             exit 1
@@ -84,6 +87,20 @@ _opt_parse_args() {
 
     getopt_short="$(echo "${opts[@]}" | tr ' ' '\n' | cut -d/ -f2 | sort | uniq | tr '\n' ':')"
     getopt_long="$(echo "${opts[@]}" | tr ' ' '\n' | cut -d/ -f3 | sort | uniq | sed -E 's/$/:,/' | tr -d '\n')"
+
+    for opt in "${opts[@]}"; do
+        local optdef
+        optdef="$(echo "$opt" | cut -d/ -f 4-)"
+
+        if [[ "$optdef" == "false" ]]; then
+            local optshort optlong
+            optshort="$(echo "$opt" | cut -d/ -f 2)"
+            optlong="$(echo "$opt" | cut -d/ -f 3)"
+
+            getopt_short="$(echo "$getopt_short" | sed "s ${optshort}: ${optshort} g")"
+            getopt_long="$(echo "$getopt_long" | sed -E "s (^|,)${optlong}: \\1${optlong} g")"
+        fi
+    done
 
     getopt -a -n "$scriptname" -o "$getopt_short" --long "$getopt_long" -- "$@"
 }
@@ -109,12 +126,18 @@ opt_parse() {
         optidx=$(_opt_lookup "$optsname" "$1")
 
         if [[ "$optidx" != "-1" ]]; then
-            local optvarname
+            local optvarname optdef
             optvarname="$(echo "${opts[$optidx]}" | cut -d/ -f1)"
+            optdef="$(echo "${opts[$optidx]}" | cut -d/ -f4-)"
 
             local -n optvar="$optvarname"
-            optvar="$2"
-            shift 2
+            if [[ "$optdef" == "false" ]]; then
+                optvar="true"
+                shift 1
+            else
+                optvar="$2"
+                shift 2
+            fi
         else
             case "$1" in
                 # end of arguments

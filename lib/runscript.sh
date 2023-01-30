@@ -73,6 +73,7 @@ RUNONE_OPTS=(
     BURST/B/client-burst/1024
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
+    VERBOSE/v/verbose/false
 )
 runone() {
     local orig_args=("$@")
@@ -92,8 +93,11 @@ runone() {
 
     local outdir="${OUTPUT_DIR}/$outdirname"
 
+    [[ -n "$VERBOSE" ]] && VERBOSE="-v"
+
+    set -x
     echo "runone" "${orig_args[@]}" >&2
-    if "$RUNMIR" -M "$BENCH_PATH" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE"; then
+    if "$RUNMIR" -M "$BENCH_PATH" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" $VERBOSE; then
         echo "DONE: runone" "${orig_args[@]}" >&2
     else
         echo "FAILED: runone" "${orig_args[@]}" >&2
