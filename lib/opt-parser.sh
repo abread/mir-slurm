@@ -151,7 +151,10 @@ opt_parse() {
         fi
     done
 
-    [[ $# -gt 0 ]] && panic "Unexpected options: $*"
+    [[ $# -gt 0 ]] && \
+        echo "Unexpected options: $*" && \
+        opt_usage "$optsname" "$scriptname" && \
+        exit 1
 
     _opt_check_defined "$optsname" "$0"
 }
