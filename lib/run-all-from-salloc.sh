@@ -22,8 +22,11 @@ OPTS=(
     BURST/B/client-burst/1024
     DURATION/T/client-duration/120
     REQ_SIZE/s/client-reqSize/256
+    VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
+
+[[ -n "$VERBOSE" ]] && VERBOSE="-v"
 
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"

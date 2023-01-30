@@ -95,7 +95,6 @@ runone() {
 
     [[ -n "$VERBOSE" ]] && VERBOSE="-v"
 
-    set -x
     echo "runone" "${orig_args[@]}" >&2
     if "$RUNMIR" -M "$BENCH_PATH" -o "$outdir" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" $VERBOSE; then
         echo "DONE: runone" "${orig_args[@]}" >&2
