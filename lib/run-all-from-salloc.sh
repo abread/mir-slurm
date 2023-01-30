@@ -52,7 +52,9 @@ RUN_BENCH_CLIENT="$(dirname "$0")/run-bench-client.sh"
 
 # start replicas
 echo "$(date): starting replicas" >&2
-srun --kill-on-bad-exit=1 --het-group=0 -- \
+REPLICA_OUT_FILE_SPEC='replica-%t-%N.log'
+REPLICA_ERR_FILE_SPEC='replica-%t-%N.err'
+srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
     "$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" &
 
 sleep 5 # give them some time to start up
@@ -64,7 +66,9 @@ jobs &>/dev/null # let jobs report that it's done (if it finished early)
 echo "$(date): starting clients" >&2
 # run client nodes to completion
 CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
-srun --kill-on-bad-exit=1 --het-group=1 -- \
+CLIENT_OUT_FILE_SPEC='client-%t-%N.log'
+CLIENT_ERR_FILE_SPEC='client-%t-%N.err'
+srun --kill-on-bad-exit=1 --het-group=1 -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
     "$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
 
 echo "$(date): clients done, cooling down" >&2
