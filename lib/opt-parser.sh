@@ -97,7 +97,7 @@ _opt_parse_args() {
             optshort="$(echo "$opt" | cut -d/ -f 2)"
             optlong="$(echo "$opt" | cut -d/ -f 3)"
 
-            getopt_short="$(echo "$getopt_short" | sed "s ${optshort}: ${optshort} g")"
+            getopt_short="${getopt_short//$optshort:/$optshort}"
             getopt_long="$(echo "$getopt_long" | sed -E "s (^|,)${optlong}: \\1${optlong} g")"
         fi
     done
