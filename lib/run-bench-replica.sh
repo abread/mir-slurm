@@ -32,7 +32,7 @@ ID="$(grep -E "/dns4/$(hostname)/" "${MEMBERSHIP_PATH}" | cut -d' ' -f1)"
 echo "$(hostname) has ID $ID" >&2
 
 STATSFILE="${OUTPUT_DIR}/${ID}.csv"
-[[ -f "$STATSFILE" ]] && exit 1
+[[ -f "$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
 
 # try to ensure all files are written before exiting
 trap sync exit
