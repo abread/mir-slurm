@@ -26,8 +26,6 @@ OPTS=(
 )
 opt_parse OPTS "$0" "$@"
 
-[[ -n "$VERBOSE" ]] && VERBOSE="-v"
-
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
 [[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"
 
@@ -84,7 +82,7 @@ echo "$(date): starting replicas" >&2
 REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.log"
 REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
-    "$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" $VERBOSE &
+    "$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} &
 
 sleep 5 # give them some time to start up
 
