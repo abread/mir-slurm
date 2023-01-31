@@ -86,6 +86,8 @@ runone() {
         optvarname="$(echo "$opt" | cut -d/ -f1)"
         optshort="$(echo "$opt" | cut -d/ -f2)"
 
+        [[ "$optvarname" == "VERBOSE" ]] && continue
+
         local -n optvar="$optvarname"
 
         outdirname="${outdirname}${optshort}=${optvar}:"
