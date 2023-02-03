@@ -2,8 +2,8 @@
 set -e
 
 panic() {
-    echo "$@" >&2
-    exit 1
+	echo "$@" >&2
+	exit 1
 }
 
 source "$(dirname "$0")/opt-parser.sh"
@@ -11,15 +11,15 @@ source "$(dirname "$0")/opt-parser.sh"
 # OPTS is used by opt_parse
 # shellcheck disable=SC2034
 OPTS=(
-    BENCH_PATH/M/mirBenchPath/./bench
+	BENCH_PATH/M/mirBenchPath/./bench
 
-    PROTOCOL/p/protocol/
-    BATCH_SIZE/b/batchSize/
-    OUTPUT_DIR/o/outputDir/
-    STAT_PERIOD/P/statPeriod/5s
+	PROTOCOL/p/protocol/
+	BATCH_SIZE/b/batchSize/
+	OUTPUT_DIR/o/outputDir/
+	STAT_PERIOD/P/statPeriod/5s
 
-    MEMBERSHIP_PATH/m/membership/
-    VERBOSE/v/verbose/false
+	MEMBERSHIP_PATH/m/membership/
+	VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
 

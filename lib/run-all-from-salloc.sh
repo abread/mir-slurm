@@ -2,8 +2,8 @@
 set -e
 
 panic() {
-    echo "$@" >&2
-    exit 1
+	echo "$@" >&2
+	exit 1
 }
 
 source "$(dirname "$0")/opt-parser.sh"
@@ -11,18 +11,18 @@ source "$(dirname "$0")/opt-parser.sh"
 # OPTS is used by opt_parse
 # shellcheck disable=SC2034
 OPTS=(
-    BENCH_PATH/M/mirBenchPath/
-    OUTPUT_DIR/o/outputDir/
+	BENCH_PATH/M/mirBenchPath/
+	OUTPUT_DIR/o/outputDir/
 
-    PROTOCOL/p/replica-protocol/
-    LOAD/l/load/
-    COOLDOWN/C/cooldown/60
-    BATCH_SIZE/b/replica-batchSize/
-    STAT_PERIOD/P/replica-statPeriod/5s
-    BURST/B/client-burst/1024
-    DURATION/T/client-duration/120
-    REQ_SIZE/s/client-reqSize/256
-    VERBOSE/v/verbose/false
+	PROTOCOL/p/replica-protocol/
+	LOAD/l/load/
+	COOLDOWN/C/cooldown/60
+	BATCH_SIZE/b/replica-batchSize/
+	STAT_PERIOD/P/replica-statPeriod/5s
+	BURST/B/client-burst/1024
+	DURATION/T/client-duration/120
+	REQ_SIZE/s/client-reqSize/256
+	VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -38,29 +38,29 @@ MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # parse slurm nodelist
 parse_slurm_nodelist() {
-    local nodes="$1"
+	local nodes="$1"
 
-    # transform [a,b] ranges into bash expansions ({})
-    nodes="$(echo "$nodes" | sed -E 's \[ { g' | sed -E 's \] } g')"
+	# transform [a,b] ranges into bash expansions ({})
+	nodes="$(echo "$nodes" | sed -E 's \[ { g' | sed -E 's \] } g')"
 
-    # transform [a-b] ranges into bash expansions ({a..b})
-    nodelist_transform_range() {
-        echo "$1" | sed -E 's ([^0-9])([0-9]+)-([0-9]+)([^0-9]) \1{\2..\3}\4 g'
-    }
-    while [[ "$(nodelist_transform_range "$nodes")" != "$nodes" ]]; do
-        nodes="$(nodelist_transform_range "$nodes")"
-    done
+	# transform [a-b] ranges into bash expansions ({a..b})
+	nodelist_transform_range() {
+		echo "$1" | sed -E 's ([^0-9])([0-9]+)-([0-9]+)([^0-9]) \1{\2..\3}\4 g'
+	}
+	while [[ "$(nodelist_transform_range "$nodes")" != "$nodes" ]]; do
+		nodes="$(nodelist_transform_range "$nodes")"
+	done
 
-    # wrap everything in {} to deal with strings such as lab1p1,lab2p{2,3}
-    # which would expand to lab1p1,lab2p2 lab1p1,lab2p3
-    nodes='{'"$nodes"'}'
+	# wrap everything in {} to deal with strings such as lab1p1,lab2p{2,3}
+	# which would expand to lab1p1,lab2p2 lab1p1,lab2p3
+	nodes='{'"$nodes"'}'
 
-    # expand node list
-    nodes="$(eval echo "$nodes")"
+	# expand node list
+	nodes="$(eval echo "$nodes")"
 
-    # when expanding constructs like lab1p{{1..2}}, they will result in lab1p{1} lab1p{2}
-    # so we'll remove all the curly braces
-    echo "$nodes" | tr -d '{}'
+	# when expanding constructs like lab1p{{1..2}}, they will result in lab1p{1} lab1p{2}
+	# so we'll remove all the curly braces
+	echo "$nodes" | tr -d '{}'
 }
 
 REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
@@ -70,8 +70,8 @@ REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
 
 REPLICA_ID=0
 for hostname in $REPLICA_NODES; do
-    echo "${REPLICA_ID} /dns4/${hostname}/tcp/${MIR_PORT}" >> "$MEMBERSHIP_PATH"
-    REPLICA_ID=$(( REPLICA_ID + 1 ))
+	echo "${REPLICA_ID} /dns4/${hostname}/tcp/${MIR_PORT}" >> "$MEMBERSHIP_PATH"
+	REPLICA_ID=$(( REPLICA_ID + 1 ))
 done
 
 RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
@@ -82,7 +82,7 @@ echo "$(date): starting replicas" >&2
 REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.log"
 REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
-    "$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} &
+	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} &
 
 sleep 5 # give them some time to start up
 
@@ -96,7 +96,7 @@ CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
 CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.log"
 CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=1 -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
-    "$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
+	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
 
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"
