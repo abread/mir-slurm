@@ -103,7 +103,7 @@ ${target} := $outdirname
 all: \$(${target})
 
 \$(${target}):
-	"\$(RUNMIR)" -M "\$(BENCH_PATH)" -o "\$@" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v}
+	"\$(RUNMIR)" -M "\$(BENCH_PATH)" -o "\$@" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v} || echo "FAILED ${target}"
 
 END
 ) &
