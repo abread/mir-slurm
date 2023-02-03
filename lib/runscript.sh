@@ -52,6 +52,8 @@ EOF
 
 # hand over execution to generated script when done
 run_make() {
+	wait # ensure all runones terminated
+
 	# try to hint glusterfs at doing stuff
 	sync
 
@@ -75,8 +77,7 @@ RUNONE_OPTS=(
 	VERBOSE/v/verbose/false
 )
 runone() {
-	local orig_args=("$@")
-
+(
 	opt_parse RUNONE_OPTS "runone" "$@"
 
 	local outdirname=""
@@ -103,7 +104,11 @@ all: \$(${target})
 
 \$(${target}):
 	"\$(RUNMIR)" -M "\$(BENCH_PATH)" -o "\$@" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v}
+
 END
+) &
 
 	__TARGET_I=$(( __TARGET_I + 1 ))
+
+	[[ $(( __TARGET_I % ($(nproc) * 2) )) -eq 0 ]] && wait || true
 }
