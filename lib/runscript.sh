@@ -73,6 +73,8 @@ runone() {
 		[[ "$key" == "--verbose" ]] && continue
 		[[ "$key" == "-V" ]] && continue
 		[[ "$key" == "--client-verbose" ]] && continue
+		[[ "$key" == "-c" ]] && shift && continue
+		[[ "$key" == "--num-clients" ]] && shift && continue
 
 		key="${key#-}"
 
