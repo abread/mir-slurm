@@ -61,7 +61,7 @@ parse_slurm_nodelist() {
 
 MIR_PORT=4242
 REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
-N_CLIENTS="$(echo "$SLURM_NNODES_HET_GROUP_1")"
+N_CLIENTS="$SLURM_NNODES_HET_GROUP_1"
 MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # generate membership list
