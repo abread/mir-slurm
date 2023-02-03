@@ -65,7 +65,7 @@ EXP_DURATION=$(( ( DURATION + COOLDOWN ) / 60 + 2 ))
 try_run() {
 	local i="$1"
 	local outdir wipdir
-	outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
+	outdir="$(dirname "$OUTPUT_DIR")/${i},$(basename "$OUTPUT_DIR")"
 	wipdir="$(dirname "$OUTPUT_DIR")/WIP.$(basename "$outdir")"
 
 	mkdir "$wipdir"
@@ -76,8 +76,10 @@ try_run() {
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" \
 			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "${DURATION}s" -s "$REQ_SIZE" ${VERBOSE+-v} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
+	ret=$?
 
 	mv "$wipdir" "$outdir"
+	return $ret
 }
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
