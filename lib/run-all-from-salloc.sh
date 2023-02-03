@@ -22,7 +22,8 @@ OPTS=(
 	BURST/B/client-burst/1024
 	DURATION/T/client-duration/120
 	REQ_SIZE/s/client-reqSize/256
-	VERBOSE/v/verbose/false
+	REPLICA_VERBOSE/v/replica-verbose/false
+	CLIENT_VERBOSE/v/client-verbose/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -82,7 +83,7 @@ echo "$(date): starting replicas" >&2
 REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.log"
 REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} &
+	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} &
 
 sleep 5 # give them some time to start up
 
@@ -96,7 +97,7 @@ CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
 CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.log"
 CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=1 -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH"
+	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v}
 
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"

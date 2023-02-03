@@ -19,6 +19,7 @@ OPTS=(
 	REQ_SIZE/s/reqSize/
 
 	MEMBERSHIP_PATH/m/membership/
+	VERBOSE/v/verbose/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -28,4 +29,4 @@ ID="$SLURM_PROCID"
 [[ -n "$ID" ]] || panic "missing ID/SLURM_PROCID"
 
 set -x
-exec "$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH"
+exec "$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
