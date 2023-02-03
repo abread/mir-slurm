@@ -52,7 +52,7 @@ check_run_ok() {
 		(! grep "Usage:" "$outdir"/*.err >/dev/null) && \
 		(! grep "Requested" "$outdir/run.err" >/dev/null) && \
 		(! grep "failed to CBOR marshal message:" "$outdir"/*.log >/dev/null) && \
-		 [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ge $(( ( (LOAD * 99) / 100 ) * N_SERVERS * DURATION )) ]]
+		[[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ge $(( ( (LOAD * 99) / 100 ) * N_SERVERS * DURATION )) ]]
 	) || return 1
 
 	for i in $(seq 0 $(( N_SERVERS - 1))); do
@@ -76,7 +76,7 @@ try_run() {
 		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION  -- \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" \
 			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v} \
-		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
+		> "${wipdir}/run.log" 2> "${wipdir}/run.err" || true
 
 	mv "$wipdir" "$outdir"
 }
