@@ -27,16 +27,6 @@ OPTS=(
 )
 opt_parse OPTS "$0" "$@"
 
-[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
-[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"
-
-# set remaining params
-MIR_PORT=4242
-N_CLIENTS=$(echo "$SLURM_JOB_NODELIST_HET_GROUP_1" | wc -l)
-MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
-
-[[ -d "$OUTPUT_DIR" ]] || panic "output dir doesn't exist"
-
 # parse slurm nodelist
 parse_slurm_nodelist() {
 	local nodes="$1"
@@ -64,7 +54,15 @@ parse_slurm_nodelist() {
 	echo "$nodes" | tr -d '{}'
 }
 
+[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
+[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"
+
+[[ -d "$OUTPUT_DIR" ]] || panic "output dir doesn't exist"
+
+MIR_PORT=4242
 REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
+N_CLIENTS="$(echo "$SLURM_NNODES_HET_GROUP_1")"
+MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # generate membership list
 [[ ! -f "$MEMBERSHIP_PATH" ]] || panic "membership file already exists"
