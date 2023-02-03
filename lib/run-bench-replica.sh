@@ -36,4 +36,5 @@ STATSFILE="${OUTPUT_DIR}/${ID}.csv"
 # try to ensure all files are written before exiting
 trap sync exit
 
+set -x
 "$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "$STAT_PERIOD" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}

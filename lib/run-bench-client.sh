@@ -27,4 +27,5 @@ opt_parse OPTS "$0" "$@"
 ID="$SLURM_PROCID"
 [[ -n "$ID" ]] || panic "missing ID/SLURM_PROCID"
 
-exec "$BENCH_PATH" client -b "$BURST" -T "$DURATION" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH"
+set -x
+exec "$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH"
