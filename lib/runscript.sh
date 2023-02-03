@@ -52,8 +52,6 @@ EOF
 
 # hand over execution to generated script when done
 run_make() {
-	wait # ensure all runones terminated
-
 	# try to hint glusterfs at doing stuff
 	sync
 
@@ -63,34 +61,23 @@ run_make() {
 trap run_make exit
 
 __TARGET_I=0
-RUNONE_OPTS=(
-	PROTOCOL/p/replica-protocol/
-	F/f/max-byz-faults/
-	N_CLIENTS/c/num-clients/8
-	LOAD/l/load/
-	COOLDOWN/C/cooldown/60
-	BATCH_SIZE/b/replica-batchSize/
-	STAT_PERIOD/P/replica-statPeriod/1s
-	BURST/B/client-burst/1024
-	DURATION/T/client-duration/120
-	REQ_SIZE/s/client-reqSize/256
-	VERBOSE/v/verbose/false
-)
 runone() {
-(
-	opt_parse RUNONE_OPTS "runone" "$@"
-
 	local outdirname=""
-	for opt in "${RUNONE_OPTS[@]}"; do
-		local optvarname optshort
-		optvarname="$(echo "$opt" | cut -d/ -f1)"
-		optshort="$(echo "$opt" | cut -d/ -f2)"
+	local orig_args=("$@")
 
-		[[ "$optvarname" == "VERBOSE" ]] && continue
+	while [[ $# -gt 0 ]]; do
+		local key="$1"
+		shift
 
-		local -n optvar="$optvarname"
+		[[ "$key" =~ ^-[a-zA-Z-]+$ ]] || (echo "bad flag $key" >&2; return 1)
+		[[ "$key" == "-v" ]] && continue
 
-		outdirname="${outdirname}${optshort}=${optvar},"
+		key="${key#-}"
+
+		local value="$1"
+		shift
+
+		outdirname="${outdirname}${key}=${value},"
 	done
 
 	outdirname="${outdirname%,}" # remove trailing comma
@@ -103,12 +90,9 @@ ${target} := $outdirname
 all: \$(${target})
 
 \$(${target}):
-	"\$(RUNMIR)" -M "\$(BENCH_PATH)" -o "\$@" -p "$PROTOCOL" -f "$F" -c "$N_CLIENTS" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v} || echo "FAILED ${target}"
+	"\$(RUNMIR)" -M "\$(BENCH_PATH)" -o "\$@" ${orig_args[@]@Q} || echo "FAILED ${target}"
 
 END
-) &
 
 	__TARGET_I=$(( __TARGET_I + 1 ))
-
-	[[ $(( __TARGET_I % ($(nproc) * 2) )) -eq 0 ]] && wait || true
 }
