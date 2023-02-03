@@ -41,7 +41,7 @@ CLIENT_NODE_SELECTOR=(-x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[
 check_run_ok() {
 	local i="$1"
 	local outdir
-	outdir="$(dirname "$OUTPUT_DIR")/${i}:$(basename "$OUTPUT_DIR")"
+	outdir="$(dirname "$OUTPUT_DIR")/${i},$(basename "$OUTPUT_DIR")"
 
 	(
 		[[ -f "$outdir/membership" ]] && \
@@ -76,9 +76,11 @@ try_run() {
 		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION  -- \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -b "$BATCH_SIZE" \
 			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${VERBOSE+-v} \
-		> "${wipdir}/run.log" 2> "${wipdir}/run.err" || true
+		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
+	ret=$?
 
 	mv "$wipdir" "$outdir"
+	return $ret
 }
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
