@@ -70,6 +70,9 @@ runone() {
 
 		[[ "$key" =~ ^-[a-zA-Z-]+$ ]] || (echo "bad flag $key" >&2; return 1)
 		[[ "$key" == "-v" ]] && continue
+		[[ "$key" == "--verbose" ]] && continue
+		[[ "$key" == "-V" ]] && continue
+		[[ "$key" == "--client-verbose" ]] && continue
 
 		key="${key#-}"
 
