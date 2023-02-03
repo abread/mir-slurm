@@ -23,7 +23,7 @@ OPTS=(
 	DURATION/T/client-duration/120
 	REQ_SIZE/s/client-reqSize/256
 	REPLICA_VERBOSE/v/replica-verbose/false
-	CLIENT_VERBOSE/v/client-verbose/false
+	CLIENT_VERBOSE/V/client-verbose/false
 )
 opt_parse OPTS "$0" "$@"
 
