@@ -15,6 +15,7 @@ OPTS=(
 	OUTPUT_DIR/o/outputDir/
 
 	PROTOCOL/p/replica-protocol/
+	N_CLIENTS/c/num-clients/8
 	LOAD/l/load/
 	COOLDOWN/C/cooldown/60
 	BATCH_SIZE/b/replica-batchSize/
@@ -61,7 +62,6 @@ parse_slurm_nodelist() {
 
 MIR_PORT=4242
 REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
-N_CLIENTS="$SLURM_NTASKS_HET_GROUP_1"
 MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # generate membership list
@@ -94,7 +94,7 @@ echo "$(date): starting clients" >&2
 CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
 CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.log"
 CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.err"
-srun --kill-on-bad-exit=1 --het-group=1 -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
+srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
 	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v}
 
 echo "$(date): clients done, cooling down" >&2
