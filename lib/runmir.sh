@@ -17,9 +17,9 @@ OPTS=(
 
 	PROTOCOL/p/replica-protocol/
 	F/f/max-byz-faults/
-	N_CLIENTS/c/num-clients/8
+	N_CLIENTS/c/num-clients/24
 	LOAD/l/load/
-	COOLDOWN/C/cooldown/60
+	COOLDOWN/C/cooldown/45
 	BATCH_SIZE/b/replica-batchSize/
 	STAT_PERIOD/P/replica-statPeriod/1s
 	BURST/B/client-burst/1024
@@ -37,7 +37,7 @@ SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 N_SERVERS=$(( 3 * F + 1 ))
 
 SERVER_NODE_SELECTOR=(-x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab4p[1-10],lab6p[1-9],lab7p[1-9]')
-CLIENT_NODE_SELECTOR=(-x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab5p[1-20],lab6p[1-9],lab7p[1-9]')
+CLIENT_NODE_SELECTOR=(-x 'lab5p[1-20]')
 
 check_run_ok() {
 	local i="$1"
@@ -74,7 +74,7 @@ try_run() {
 
 	salloc \
 		"${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
-		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION  -- \
+		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $(( DURATION / 60 + 2 ))  -- \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -c "$N_CLIENTS" -b "$BATCH_SIZE" \
 			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"

@@ -83,7 +83,7 @@ REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
 	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} &
 
-sleep 5 # give them some time to start up
+sleep 10 # give them some time to start up
 
 # check if replicas are still alive
 jobs &>/dev/null # let jobs report that it's done (if it finished early)
