@@ -23,5 +23,6 @@ for p in alea iss; do
 	runone -p $p -f 5 -l 16384 -b 1024
 	runone -p $p -f 1 -l 16 -b 1024
 	runone -p $p -f 5 -l 16384 -b 7680
+	runone -p $p -f 2 -l 1024 -b 1024
 	runone -p $p -f 2 -l 8192 -b 1024
 done
