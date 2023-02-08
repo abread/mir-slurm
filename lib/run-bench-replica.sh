@@ -33,8 +33,11 @@ echo "$(hostname) has ID $ID" >&2
 STATSFILE="${OUTPUT_DIR}/${ID}.csv"
 [[ -f "$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
 
-# try to ensure all files are written before exiting
-trap sync exit
-
+set +e
 set -x
+
 "$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+echo "Exit code: $?" >&2
+
+# try to ensure all files are written before exiting
+sync

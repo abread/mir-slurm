@@ -28,5 +28,11 @@ opt_parse OPTS "$0" "$@"
 ID="$SLURM_PROCID"
 [[ -n "$ID" ]] || panic "missing ID/SLURM_PROCID"
 
+set +e
 set -x
-exec "$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+
+"$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+echo "Exit code: $?" >&2
+
+# try to ensure all files are written before exiting
+sync
