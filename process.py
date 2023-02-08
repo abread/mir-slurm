@@ -59,8 +59,8 @@ EXP_PARAMETERS_BY_SHORTNAME = {ep.shortname:ep for ep in EXP_PARAMETERS}
 
 ROOT='.'
 def main():
-    all_field_names = set(f.name for f in EXP_PARAMETERS).union(f.name for f in STAT_FIELDS)
-    assert len(all_field_names) == len(EXP_PARAMETERS) + len(STAT_FIELDS)
+    all_field_names = set(f.name for f in EXP_PARAMETERS).union(f.name for f in STAT_FIELDS).union(['replica_idx'])
+    assert len(all_field_names) == len(EXP_PARAMETERS) + len(STAT_FIELDS) + 1
     assert all(n in all_field_names for n in FIELDS)
 
     writer = csv.DictWriter(sys.stdout, FIELDS)
