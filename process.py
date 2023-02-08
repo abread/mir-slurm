@@ -24,6 +24,8 @@ FIELDS = [
     'mem_stack_in_use',
     'mem_heap_alloc',
     'mem_total_alloc',
+    'mem_malloc_count',
+    'mem_free_count',
     'mem_pause_total_ns',
     'mem_pause_count',
 ]
@@ -141,6 +143,8 @@ STAT_FIELDS = [
     StatField('mem_stack_in_use', 'memStackInUse', int, last),
     StatField('mem_heap_alloc', 'memHeapAlloc', int, last),
     StatField('mem_total_alloc', 'memTotalAlloc', int, last),
+    StatField('mem_malloc_count', 'memMallocs', int, last),
+    StatField('mem_free_count', 'memFrees', int, last),
     StatField('mem_pause_total_ns', 'memPauseTotalNs', int, last),
     StatField('mem_pause_count', 'memNumGC', int, last),
 ]
@@ -183,6 +187,8 @@ COMBINED_REPLICA_STATS_FIELDS['mem_sys'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_stack_in_use'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_heap_alloc'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_total_alloc'].combiner = sum_combiner
+COMBINED_REPLICA_STATS_FIELDS['mem_malloc_count'].combiner = sum_combiner
+COMBINED_REPLICA_STATS_FIELDS['mem_free_count'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_pause_total_ns'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_pause_count'].combiner = sum_combiner
 del COMBINED_REPLICA_STATS_FIELDS['ts_ms']
