@@ -21,7 +21,7 @@ OPTS=(
 	LOAD/l/load/
 	COOLDOWN/C/cooldown/45
 	BATCH_SIZE/b/replica-batchSize/
-	STAT_PERIOD/P/replica-statPeriod/1s
+	STAT_PERIOD/P/replica-statPeriod/1
 	BURST/B/client-burst/1024
 	DURATION/T/client-duration/120
 	REQ_SIZE/s/client-reqSize/256
