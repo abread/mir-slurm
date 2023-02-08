@@ -40,7 +40,11 @@ set +e
 set -x
 
 "$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
-echo "Exit code: $?" >&2
+exit_code=$?
+
+echo "Exit code: $exit_code" >&2
 
 # try to ensure all files are written before exiting
 sync
+
+exit $exit_code

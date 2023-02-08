@@ -35,7 +35,11 @@ set +e
 set -x
 
 "$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
-echo "Exit code: $?" >&2
+exit_code=$?
+
+echo "Exit code: $exit_code" >&2
 
 # try to ensure all files are written before exiting
 sync
+
+exit $exit_code
