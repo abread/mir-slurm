@@ -8,7 +8,7 @@ set -e
 
 source "$(dirname "${BASH_SOURCE[0]}")/opt-parser.sh"
 
-DEFAULT_OUTPUT_DIR="mirbench_$(basename "$0")_$(date +"%F_%R:%S")"
+DEFAULT_OUTPUT_DIR="$(basename "$0")_$(date +"%F_%R:%S")"
 DEFAULT_BENCH_PATH="$(dirname "${BASH_SOURCE[0]}")/../../mir/bin/bench"
 
 panic() {
