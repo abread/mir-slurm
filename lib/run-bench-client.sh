@@ -23,6 +23,9 @@ OPTS=(
 )
 opt_parse OPTS "$0" "$@"
 
+sync
+[[ -x "$BENCH_PATH" ]] || panic "BENCH_PATH does not exist or is not an executable"
+[[ -d "$OUTPUT_DIR" ]] || panic "OUTPUT_DIR does not exist or is not a directory"
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
 
 ID="$SLURM_PROCID"
