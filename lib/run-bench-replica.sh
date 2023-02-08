@@ -16,7 +16,7 @@ OPTS=(
 	PROTOCOL/p/protocol/
 	BATCH_SIZE/b/batchSize/
 	OUTPUT_DIR/o/outputDir/
-	STAT_PERIOD/P/statPeriod/5s
+	STAT_PERIOD/P/statPeriod/1
 
 	MEMBERSHIP_PATH/m/membership/
 	VERBOSE/v/verbose/false
@@ -37,4 +37,4 @@ STATSFILE="${OUTPUT_DIR}/${ID}.csv"
 trap sync exit
 
 set -x
-"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "$STAT_PERIOD" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
