@@ -27,8 +27,8 @@ OPTS=(
 	CLIENT_VERBOSE/V/client-verbose/false
 	REPLICA_CPUPROFILE//replica-cpuprofile/false
 	REPLICA_MEMPROFILE//replica-memprofile/false
-	CLIENT_CPUPROFILE//replica-cpuprofile/false
-	CLIENT_MEMPROFILE//replica-memprofile/false
+	CLIENT_CPUPROFILE//client-cpuprofile/false
+	CLIENT_MEMPROFILE//client-memprofile/false
 )
 opt_parse OPTS "$0" "$@"
 
