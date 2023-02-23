@@ -17,12 +17,18 @@ opt_usage() {
 		optlong="$(echo "$opt" | cut -d/ -f 3)"
 		optdef="$(echo "$opt" | cut -d/ -f 4-)"
 
-		if [[ -z "$optdef" ]]; then
-			echo "           -$optshort | --$optlong $optname" >&2
-		elif [[ "$optdef" == "false" ]]; then
-			echo "         [ -$optshort | --$optlong ]" >&2
+		if [[ -n "$optshort" ]]; then
+			optshort=" -$optshort |"
 		else
-			echo "         [ -$optshort | --$optlong $optname (default: $optdef) ]" >&2
+			optshort="     "
+		fi
+
+		if [[ -z "$optdef" ]]; then
+			echo "          $optshort --$optlong $optname" >&2
+		elif [[ "$optdef" == "false" ]]; then
+			echo "         [$optshort --$optlong ]" >&2
+		else
+			echo "         [$optshort --$optlong $optname (default: $optdef) ]" >&2
 		fi
 	done
 }
@@ -38,7 +44,7 @@ _opt_lookup() {
 		optshort="$(echo "${opts[$idx]}" | cut -d/ -f 2)"
 		optlong="$(echo "${opts[$idx]}" | cut -d/ -f 3)"
 
-		[[ "$opt" == "-${optshort}" || "$opt" == "--${optlong}" ]] && break
+		[[ "$opt" == "-${optshort}" || "$opt" == "--${optlong}" ]] && [[ "$opt" != "-" ]] && break
 	done
 
 	echo "$idx"

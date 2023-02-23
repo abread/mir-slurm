@@ -20,6 +20,8 @@ OPTS=(
 
 	MEMBERSHIP_PATH/m/membership/
 	VERBOSE/v/verbose/false
+	CPUPROFILE//cpuprofile/false
+	MEMPROFILE//memprofile/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -30,10 +32,16 @@ sync
 ID="$SLURM_PROCID"
 [[ -n "$ID" ]] || panic "missing ID/SLURM_PROCID"
 
+CPUPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.cpuprof"
+MEMPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.memprof"
+
+CPUPROFILE="${CPUPROFILE+-cpuprofile $CPUPROFILE_PATH}"
+MEMPROFILE="${MEMPROFILE+-memprofile $MEMPROFILE_PATH}"
+
 set +e
 set -x
 
-"$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+"$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
 exit_code=$?
 
 echo "Exit code: $exit_code" >&2

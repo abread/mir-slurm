@@ -20,6 +20,8 @@ OPTS=(
 
 	MEMBERSHIP_PATH/m/membership/
 	VERBOSE/v/verbose/false
+	CPUPROFILE//cpuprofile/false
+	MEMPROFILE//memprofile/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -36,10 +38,16 @@ echo "$(hostname) has ID $ID" >&2
 STATSFILE="${OUTPUT_DIR}/${ID}.csv"
 [[ -f "$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
 
+CPUPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.cpuprof"
+MEMPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.memprof"
+
+CPUPROFILE="${CPUPROFILE+-cpuprofile $CPUPROFILE_PATH}"
+MEMPROFILE="${MEMPROFILE+-memprofile $MEMPROFILE_PATH}"
+
 set +e
 set -x
 
-"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v}
+"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
 exit_code=$?
 
 echo "Exit code: $exit_code" >&2

@@ -74,6 +74,10 @@ runone() {
 		[[ "$key" == "--verbose" ]] && continue
 		[[ "$key" == "-V" ]] && continue
 		[[ "$key" == "--client-verbose" ]] && continue
+		[[ "$key" == "--replica-cpuprofile" ]] && continue
+		[[ "$key" == "--replica-memprofile" ]] && continue
+		[[ "$key" == "--client-cpuprofile" ]] && continue
+		[[ "$key" == "--client-memprofile" ]] && continue
 
 		key="${key#-}"
 

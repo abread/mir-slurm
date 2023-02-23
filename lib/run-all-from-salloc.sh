@@ -25,6 +25,10 @@ OPTS=(
 	REQ_SIZE/s/client-reqSize/256
 	REPLICA_VERBOSE/v/replica-verbose/false
 	CLIENT_VERBOSE/V/client-verbose/false
+	REPLICA_CPUPROFILE//replica-cpuprofile/false
+	REPLICA_MEMPROFILE//replica-memprofile/false
+	CLIENT_CPUPROFILE//replica-cpuprofile/false
+	CLIENT_MEMPROFILE//replica-memprofile/false
 )
 opt_parse OPTS "$0" "$@"
 
