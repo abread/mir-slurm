@@ -26,6 +26,7 @@ OPTS=(
 	REPLICA_VERBOSE/v/replica-verbose/false
 	CLIENT_VERBOSE/V/client-verbose/false
 	REPLICA_CPUPROFILE//replica-cpuprofile/false
+	REPLICA_TRACE//replica-trace/false
 	REPLICA_MEMPROFILE//replica-memprofile/false
 	CLIENT_CPUPROFILE//client-cpuprofile/false
 	CLIENT_MEMPROFILE//client-memprofile/false
@@ -85,9 +86,9 @@ echo "$(date): starting replicas" >&2
 REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.log"
 REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} &
+	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} ${REPLICA_TRACE:+--trace} &
 
-sleep 10 # give them some time to start up
+sleep 5 # give them some time to start up
 
 # check if replicas are still alive
 jobs &>/dev/null # let jobs report that it's done (if it finished early)

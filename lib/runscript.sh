@@ -76,6 +76,7 @@ runone() {
 		[[ "$key" == "--client-verbose" ]] && continue
 		[[ "$key" == "--replica-cpuprofile" ]] && continue
 		[[ "$key" == "--replica-memprofile" ]] && continue
+		[[ "$key" == "--replica-trace" ]] && continue
 		[[ "$key" == "--client-cpuprofile" ]] && continue
 		[[ "$key" == "--client-memprofile" ]] && continue
 

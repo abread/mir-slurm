@@ -22,6 +22,7 @@ OPTS=(
 	VERBOSE/v/verbose/false
 	CPUPROFILE//cpuprofile/false
 	MEMPROFILE//memprofile/false
+	TRACE//trace/false
 )
 opt_parse OPTS "$0" "$@"
 
@@ -43,11 +44,14 @@ MEMPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.memprof"
 
 CPUPROFILE="${CPUPROFILE+--cpuprofile $CPUPROFILE_PATH}"
 MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
+TRACE="${TRACE+--traceFile ${OUTPUT_DIR}/trace-$ID.csv}"
 
 set +e
 set -x
 
-"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
+export OTEL_SERVICE_NAME="F=$F,node$ID"
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://borg.rnl.tecnico.ulisboa.pt:4318/v1/traces
+"$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE}
 exit_code=$?
 
 echo "Exit code: $exit_code" >&2

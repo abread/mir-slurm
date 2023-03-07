@@ -29,6 +29,7 @@ OPTS=(
 	CLIENT_VERBOSE/V/client-verbose/false
 	REPLICA_CPUPROFILE//replica-cpuprofile/false
 	REPLICA_MEMPROFILE//replica-memprofile/false
+	REPLICA_TRACE//replica-trace/false
 	CLIENT_CPUPROFILE//client-cpuprofile/false
 	CLIENT_MEMPROFILE//client-memprofile/false
 )
@@ -76,11 +77,12 @@ try_run() {
 
 	mkdir "$wipdir"
 
+	export F
 	salloc \
 		"${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
 		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION -- \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -c "$N_CLIENTS" -b "$BATCH_SIZE" \
-			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} \
+			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${REPLICA_TRACE+--replica-trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
 	ret=$?
 
