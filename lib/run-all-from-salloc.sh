@@ -90,6 +90,12 @@ srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "
 
 sleep 5 # give them some time to start up
 
+# send a single initial request before continuing
+# this ensures all sockets are properly connected between replicas
+"$BENCH_PATH" client -i 9999 -m "$MEMBERSHIP_PATH" -r 0.1 -T 1s
+
+sleep 5 # give them some time to wind down from the initial request
+
 # check if replicas are still alive
 jobs &>/dev/null # let jobs report that it's done (if it finished early)
 [[ $(jobs | wc -l) -ne 1 ]] && panic "servers terminated early"
