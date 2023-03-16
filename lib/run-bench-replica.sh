@@ -62,23 +62,30 @@ sync
 set +e
 set -x
 
-"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE}
-exit_code=$?
+"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} &
+bench_pid=$!
 
 set +x
 set -e
 
-echo "Exit code: $exit_code" >&2
+cleanup() {
+  kill -TERM $bench_pid
+  wait
+  exit_code=$?
 
-rm "${OUTPUT_DIR}/${BENCH_PATH}"
-if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
-  rmdir "${OUTPUT_DIR}"
-else
-  echo "could not save output. stored at ${OUTPUT_DIR}"
-  [ "$exit_code" -eq 0 ] && exit_code=1
-fi
+  echo "Exit code: $exit_code" >&2
 
-# try to ensure all files are written before exiting
-sync
+  rm "${OUTPUT_DIR}/${BENCH_PATH}"
+  if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
+    rmdir "${OUTPUT_DIR}"
+  else
+    echo "could not save output. stored at ${OUTPUT_DIR}"
+    [ "$exit_code" -eq 0 ] && exit_code=1
+  fi
 
-exit $exit_code
+  # try to ensure all files are written before exiting
+  sync
+
+  exit $exit_code
+}
+trap cleanup EXIT
