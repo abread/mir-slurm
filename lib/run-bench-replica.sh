@@ -71,24 +71,39 @@ set +x
 set -e
 
 cleanup() {
-  kill -TERM $bench_pid
-  wait
-  exit_code=$?
+	exit_code=$1
+	echo "Exit code: $exit_code" >&2
 
-  echo "Exit code: $exit_code" >&2
+	rm "${OUTPUT_DIR}/${BENCH_PATH}"
+	rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
+	if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
+		rmdir "${OUTPUT_DIR}"
+	else
+		echo "could not save output. stored at ${OUTPUT_DIR}"
+		[ "$exit_code" -eq 0 ] && exit_code=1
+	fi
 
-  rm "${OUTPUT_DIR}/${BENCH_PATH}"
-  rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
-  if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
-    rmdir "${OUTPUT_DIR}"
-  else
-    echo "could not save output. stored at ${OUTPUT_DIR}"
-    [ "$exit_code" -eq 0 ] && exit_code=1
-  fi
+	# try to ensure all files are written before exiting
+	sync
 
-  # try to ensure all files are written before exiting
-  sync
-
-  exit $exit_code
+	trap - EXIT SIGINT SIGTERM
+	echo "exiting with $exit_code" >&2
+	exit $exit_code
 }
-trap cleanup EXIT
+stop_bench_and_cleanup() {
+	trap '' EXIT SIGINT SIGTERM # ignore during cleanup
+
+	echo "$(date): stopping node" >&2
+	kill -TERM $bench_pid || true
+	wait
+	exit_code=$?
+	echo "node stopped" >&2
+
+	cleanup $exit_code
+}
+trap stop_bench_and_cleanup EXIT SIGINT SIGTERM
+
+wait
+exit_code=$?
+trap '' EXIT SIGINT SIGTERM # ignore during cleanup
+cleanup $exit_code

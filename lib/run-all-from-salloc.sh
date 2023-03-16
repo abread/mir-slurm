@@ -111,4 +111,6 @@ srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"
 
-# script exit will stop replicas
+# stop replicas
+scancel -s SIGINT "$SLURM_JOBID_HET_GROUP_0"
+wait
