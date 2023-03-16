@@ -74,7 +74,7 @@ check_run_ok() {
 		echo "bad run: found message marshalling error in logs/stdout" >&2
 		return 1
 	elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
-		echo "bad run: #delivered txs lower than expected" >&2
+		echo "bad run: #received txs lower than expected" >&2
 		return 1
 	fi
 
