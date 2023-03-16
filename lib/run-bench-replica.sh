@@ -36,25 +36,47 @@ ID="$(grep -E "/dns4/$(hostname)/" "${MEMBERSHIP_PATH}" | cut -d' ' -f1)"
 
 echo "$(hostname) has ID $ID" >&2
 
-STATSFILE="${OUTPUT_DIR}/${ID}.csv"
-[[ -f "$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
+REAL_OUTPUT_DIR="${OUTPUT_DIR}"
+OUTPUT_DIR="$(mktemp -d /tmp/runmir.XXXXXXXXX)"
 
-CPUPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.cpuprof"
-MEMPROFILE_PATH="${OUTPUT_DIR}/replica-${ID}.memprof"
+cp "${BENCH_PATH}" "${OUTPUT_DIR}/"
+BENCH_PATH="$(basename "$BENCH_PATH")"
+
+STATSFILE="${ID}.csv"
+[[ -f "${REAL_OUTPUT_DIR}/$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
+
+CPUPROFILE_PATH="replica-${ID}.cpuprof"
+MEMPROFILE_PATH="replica-${ID}.memprof"
 
 CPUPROFILE="${CPUPROFILE+--cpuprofile $CPUPROFILE_PATH}"
 MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
-TRACE="${TRACE+--traceFile ${OUTPUT_DIR}/trace-$ID.csv}"
+TRACE="${TRACE+--traceFile trace-$ID.csv}"
+
+export OTEL_SERVICE_NAME="F=$F,node$ID"
+export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://borg.rnl.tecnico.ulisboa.pt:4318/v1/traces
+
+cd "$OUTPUT_DIR"
+
+sync
 
 set +e
 set -x
 
-export OTEL_SERVICE_NAME="F=$F,node$ID"
-export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://borg.rnl.tecnico.ulisboa.pt:4318/v1/traces
 "$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE}
 exit_code=$?
 
+set +x
+set -e
+
 echo "Exit code: $exit_code" >&2
+
+rm "${OUTPUT_DIR}/${BENCH_PATH}"
+if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
+  rmdir "${OUTPUT_DIR}"
+else
+  echo "could not save output. stored at ${OUTPUT_DIR}"
+  [ "$exit_code" -eq 0 ] && exit_code=1
+fi
 
 # try to ensure all files are written before exiting
 sync
