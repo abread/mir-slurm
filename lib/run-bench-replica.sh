@@ -61,6 +61,23 @@ cd "$OUTPUT_DIR"
 
 sync
 
+(
+NODES="$(cat "$MEMBERSHIP_PATH" | cut -d' ' -f2 | sed -E 's ^/dns4/([^/]+).*$ \1 ')"
+for n in $NODES; do
+	echo "$n"
+	ping -c 5 "$n"
+	echo
+done
+) > "ping-from-$ID-$(hostname).out"
+
+w > "otherusers-$ID-$(hostname).out"
+ps ax > "processes-$ID-$(hostname).out"
+
+(
+	cd $CLUSTER_HOME/mir
+	go test -benchmem '-run=^$' -bench '^Benchmark' github.com/filecoin-project/mir/pkg/threshcrypto
+) > "perf-crypto-$ID-$(hostname).out"
+
 set +e
 set -x
 
