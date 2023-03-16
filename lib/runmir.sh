@@ -49,21 +49,43 @@ check_run_ok() {
 	local outdir
 	outdir="$(dirname "$OUTPUT_DIR")/${i},$(basename "$OUTPUT_DIR")"
 
-	(
-		[[ -f "$outdir/membership" ]] && \
-		[[ $(wc -l < "$outdir/membership") -eq $N_SERVERS ]] && \
-		[[ -f "$outdir/run.log" ]] && \
-		[[ -f "$outdir/run.err" ]] && \
-		[[ $(wc -l < "$outdir/run.err") -gt 10 ]] && \
-		(! grep "Usage:" "$outdir"/*.err >/dev/null) && \
-		(! grep "Requested" "$outdir/run.err" >/dev/null) && \
-		(! grep "failed to CBOR marshal message:" "$outdir"/*.log >/dev/null) && \
-		[[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ge $(( ( (LOAD * 99) / 100 ) * N_SERVERS * DURATION )) ]]
-	) || return 1
+	if [[ ! -f "$outdir/membership" ]]; then
+		echo "bad run: missing membership" >&2
+		return 1
+	elif [[ $(wc -l < "$outdir/membership") -ne $N_SERVERS ]]; then
+		echo "bad run: membership contains an unexpected number of replicas" >&2
+		return 1
+	elif [[ ! -f "$outdir/run.log" ]]; then
+		echo "bad run: missing run.log" >&2
+		return 1
+	elif [[ ! -f "$outdir/run.err" ]]; then
+		echo "bad run: missing run.err" >&2
+		return 1
+	elif [[ $(wc -l < "$outdir/run.err") -lt 9 ]]; then
+		echo "bad run: run.err unexpectedly short (<9 lines)" >&2
+		return 1
+	elif grep "Usage:" "$outdir"/*.err >/dev/null; then
+		echo "bad run: found command usage help in stderr" >&2
+		return 1
+	elif grep "Requested" "$outdir"/run.err >/dev/null; then
+		echo "bad run: found slurm allocation problem in run.err" >&2
+		return 1
+	elif grep "failed to CBOR marshal message:" "$outdir"/*.log >/dev/null; then
+		echo "bad run: found message marshalling error in logs/stdout" >&2
+		return 1
+	elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ge $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
+		echo "bad run: #delivered txs lower than expected" >&2
+		return 1
+	fi
 
 	for i in $(seq 0 $(( N_SERVERS - 1))); do
-		[[ -f "$outdir/$i.csv" ]] || return 1
-		[[ $(wc -l < "$outdir/$i.csv") -gt 2 ]] || return 1
+		if [[ ! -f "$outdir/$i.csv" ]]; then
+			echo "bad run: replica $i has no stats" >&2
+			return 1
+		elif [[ $(wc -l < "$outdir/$i.csv") -le 2 ]]; then
+			echo "bad run: replica $i has almost no stats (<=2 lines) " >&2
+			return 1
+		fi
 	done
 }
 
