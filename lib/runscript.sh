@@ -44,7 +44,7 @@ cp --reflink=auto "$(dirname "${BASH_SOURCE[0]}")/../process.py" "${OUTPUT_DIR}/
 
 tee "${OUTPUT_DIR}/Makefile" <<EOF
 OUTPUT_DIR := $(realpath "$OUTPUT_DIR")
-BENCH_PATH := $(realpath "$BENCH_PATH")
+BENCH_PATH := $(realpath "$OUTPUT_DIR")/scripts-saved/bench
 RUNMIR := $(realpath "$OUTPUT_DIR")/scripts-saved/runmir.sh
 
 .PHONY: all
