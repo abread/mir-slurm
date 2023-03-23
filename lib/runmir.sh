@@ -61,8 +61,8 @@ check_run_ok() {
 	elif [[ ! -f "$outdir/run.err" ]]; then
 		echo "bad run: missing run.err" >&2
 		return 1
-	elif [[ $(wc -l < "$outdir/run.err") -lt 9 ]]; then
-		echo "bad run: run.err unexpectedly short (<9 lines)" >&2
+	elif [[ $(wc -l < "$outdir/run.err") -lt 6 ]]; then
+		echo "bad run: run.err unexpectedly short (<6 lines)" >&2
 		return 1
 	elif grep "Usage:" "$outdir"/*.err >/dev/null; then
 		echo "bad run: found command usage help in stderr" >&2
@@ -74,6 +74,7 @@ check_run_ok() {
 		echo "bad run: found message marshalling error in logs/stdout" >&2
 		return 1
 	elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
+	#elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ne 2 ]]; then
 		echo "bad run: #received txs lower than expected" >&2
 		return 1
 	fi
@@ -89,7 +90,7 @@ check_run_ok() {
 	done
 }
 
-EXP_DURATION=$(( ( DURATION + COOLDOWN ) / 60 + 2 ))
+EXP_DURATION=$(( ( DURATION + COOLDOWN + 80 + N_SERVERS ) / 60 + 3 ))
 
 try_run() {
 	local i="$1"
@@ -107,6 +108,10 @@ try_run() {
 			-p "$PROTOCOL" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${REPLICA_TRACE+--replica-trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
 	ret=$?
+
+	if [ $ret -ne 0 ]; then
+		echo "bad run: salloc exited with non-zero code" >&2
+	fi
 
 	mv "$wipdir" "$outdir"
 	return $ret

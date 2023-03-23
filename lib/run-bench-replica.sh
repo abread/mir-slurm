@@ -53,12 +53,15 @@ MEMPROFILE_PATH="replica-${ID}.memprof"
 CPUPROFILE="${CPUPROFILE+--cpuprofile $CPUPROFILE_PATH}"
 MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
 TRACE="${TRACE+--traceFile trace-$ID.csv}"
+#TRACE="${TRACE+--traceFile trace-$ID.csv --enableOTLP}"
 
 export OTEL_SERVICE_NAME="F=$F,node$ID"
 export OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://borg.rnl.tecnico.ulisboa.pt:4318/v1/traces
 
 cd "$OUTPUT_DIR"
 
+sync
+ls "$REAL_OUTPUT_DIR" >/dev/null || true
 sync
 
 (
@@ -73,11 +76,6 @@ done
 w > "otherusers-$ID-$(hostname).out"
 ps ax > "processes-$ID-$(hostname).out"
 
-(
-	cd $CLUSTER_HOME/mir
-	go test -benchmem '-run=^$' -bench '^Benchmark' github.com/filecoin-project/mir/pkg/threshcrypto
-) > "perf-crypto-$ID-$(hostname).out"
-
 set +e
 set -x
 
@@ -91,15 +89,26 @@ cleanup() {
 	exit_code=$1
 	echo "Exit code: $exit_code" >&2
 
+	sync
+	ls "$REAL_OUTPUT_DIR" >/dev/null || true
+	sync
+
 	rm "${OUTPUT_DIR}/${BENCH_PATH}"
 	rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
+	
+	sleep "$ID" # stagger writes
+	
+	sync
+	ls "$REAL_OUTPUT_DIR" >/dev/null || true
+	sync
+
 	if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
 		rmdir "${OUTPUT_DIR}"
 	else
 		echo "could not save output. stored at ${OUTPUT_DIR}"
 		[ "$exit_code" -eq 0 ] && exit_code=1
 	fi
-
+	
 	# try to ensure all files are written before exiting
 	sync
 

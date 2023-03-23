@@ -88,7 +88,7 @@ REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
 	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} ${REPLICA_TRACE:+--trace} &
 
-sleep 5 # give them some time to start up
+sleep 10 # give them some time to start up
 
 # send a single initial request before continuing
 # this ensures all sockets are properly connected between replicas
@@ -111,6 +111,10 @@ srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"
 
+# check if replicas are still alive
+jobs &>/dev/null # let jobs report that it's done (if it finished early)
+[[ $(jobs | wc -l) -ne 1 ]] && panic "servers terminated early"
+
 # stop replicas
-scancel -s SIGINT "$SLURM_JOBID_HET_GROUP_0"
+scancel -s SIGINT "$SLURM_JOBID_HET_GROUP_0" || true
 wait
