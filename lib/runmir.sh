@@ -74,11 +74,25 @@ check_run_ok() {
 	elif grep "failed to CBOR marshal message:" "$outdir"/*.log >/dev/null; then
 		echo "bad run: found message marshalling error in logs/stdout" >&2
 		return 1
-	elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
-	#elif [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -ne 2 ]]; then
-		echo "bad run: #received txs lower than expected" >&2
-		return 1
 	fi
+
+	case "$CLIENT_TYPE" in
+		dummy)
+			if [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
+				echo "bad run: #received txs lower than expected" >&2
+				return 1
+			fi
+			;;
+		rr)
+			if [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * DURATION * 99 ) / 100 )) ]]; then
+				echo "bad run: #received txs lower than expected" >&2
+				return 1
+			fi
+			;;
+		*)
+			echo "WARNING: unknown CLIENT_TYPE ${CLIENT_TYPE}. Not checking real load for ${outdir}" >&2
+			;;
+	esac
 
 	for i in $(seq 0 $(( N_SERVERS - 1))); do
 		if [[ ! -f "$outdir/$i.csv" ]]; then
