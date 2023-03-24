@@ -13,6 +13,7 @@ source "$(dirname "$0")/opt-parser.sh"
 OPTS=(
 	BENCH_PATH/M/mirBenchPath/./bench
 
+	CLIENT_TYPE/t/client-type/dummy
 	RATE/r/rate/
 	BURST/b/burst/
 	DURATION/T/duration/
@@ -41,7 +42,7 @@ MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
 set +e
 set -x
 
-"$BENCH_PATH" client -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
+"$BENCH_PATH" client -t "$CLIENT_TYPE" -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
 exit_code=$?
 
 echo "Exit code: $exit_code" >&2
