@@ -42,8 +42,8 @@ SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 
 N_SERVERS=$(( 3 * F + 1 ))
 
-SERVER_NODE_SELECTOR=(-x 'lab1p[1-12],lab2p[1-20],lab3p[1-10],lab4p[1-10],lab6p[1-9],lab7p[1-9]')
-CLIENT_NODE_SELECTOR=(-x 'lab5p[1-20]')
+SERVER_NODE_SELECTOR=( -C lab5 )
+CLIENT_NODE_SELECTOR=( -x 'lab5p[1-20]' )
 
 # limit number of clients based on load
 [[ "$N_CLIENTS" -gt $(( LOAD / 256 + 1 )) ]] && N_CLIENTS=$(( LOAD / 256 + 1 ))
