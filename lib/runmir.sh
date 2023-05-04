@@ -135,13 +135,17 @@ try_run() {
 		echo "bad run: salloc exited with non-zero code" >&2
 	fi
 
+    sync
+    sleep "${RETRY_COOLDOWN}"
+    sync
+
 	mv "$wipdir" "$outdir"
 	return $ret
 }
 
 for i in $(seq 0 "$MAX_ATTEMPTS"); do
 	RUN_OUT_DIR="$(dirname "$OUTPUT_DIR")/${i},$(basename "$OUTPUT_DIR")"
-	if try_run "$i" && sync && sleep "$RETRY_COOLDOWN" && check_run_ok "$i"; then
+	if try_run "$i" && check_run_ok "$i"; then
 		mv "$RUN_OUT_DIR" "$OUTPUT_DIR"
 		exit 0
 	else
