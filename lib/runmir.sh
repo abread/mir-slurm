@@ -34,6 +34,9 @@ OPTS=(
 	CLIENT_CPUPROFILE//client-cpuprofile/false
 	CLIENT_MEMPROFILE//client-memprofile/false
 	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
+
+	# not used for anything, just useful for running an experiment multiple times
+	ID/i//-
 )
 opt_parse OPTS "$0" "$@"
 
