@@ -66,7 +66,7 @@ ls "$REAL_OUTPUT_DIR" >/dev/null || true
 sync
 
 (
-NODES="$(cat "$MEMBERSHIP_PATH" | jq -r '.validators[].net_addr')"
+NODES="$(cat "$MEMBERSHIP_PATH" | jq -r '.validators[].net_addr' | cut -d/ -f3)"
 for n in $NODES; do
 	echo "$n"
 	ping -c 5 "$n"
