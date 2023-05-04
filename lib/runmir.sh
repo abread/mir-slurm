@@ -60,7 +60,7 @@ check_run_ok() {
 	if [[ ! -f "$outdir/membership" ]]; then
 		echo "bad run: missing membership" >&2
 		return 1
-	elif [[ $(wc -l < "$outdir/membership") -ne $N_SERVERS ]]; then
+	elif [[ $(cat "$outdir/membership" | jq '.validators | length') -ne $N_SERVERS ]]; then
 		echo "bad run: membership contains an unexpected number of replicas" >&2
 		return 1
 	elif [[ ! -f "$outdir/run.log" ]]; then
