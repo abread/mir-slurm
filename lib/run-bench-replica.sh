@@ -32,7 +32,7 @@ sync
 [[ -d "$OUTPUT_DIR" ]] || panic "OUTPUT_DIR does not exist or is not a directory"
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
 
-ID="$(cat "${MEMBERSHIP_PATH}" | jq -r "(.validators | map(select(.net_addr == '/dns4/$(hostname)/tcp/${MIR_PORT}')))[0].addr")"
+ID="$(cat "${MEMBERSHIP_PATH}" | jq -r '(.validators | map(select(.net_addr == "'"/dns4/$(hostname)/tcp/${MIR_PORT}"'")))[0].addr')"
 [[ -n "$ID" ]] || panic "could not compute replica ID for $(hostname)"
 
 echo "$(hostname) has ID $ID" >&2

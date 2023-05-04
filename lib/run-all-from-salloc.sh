@@ -84,7 +84,7 @@ for hostname in $REPLICA_NODES; do
 		{
 			"addr": "${REPLICA_ID}",
 			"net_addr": "/dns4/${hostname}/tcp/${MIR_PORT}",
-			"weight": 0
+			"weight": "0"
 		}
 	EOS
 
