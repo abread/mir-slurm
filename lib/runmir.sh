@@ -33,6 +33,7 @@ OPTS=(
 	REPLICA_TRACE//replica-trace/false
 	CLIENT_CPUPROFILE//client-cpuprofile/false
 	CLIENT_MEMPROFILE//client-memprofile/false
+	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
 )
 opt_parse OPTS "$0" "$@"
 
@@ -123,7 +124,7 @@ try_run() {
 		"${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
 		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --ntasks-per-node=4 --exclusive -t $EXP_DURATION -- \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -c "$N_CLIENTS" -b "$BATCH_SIZE" \
-			-p "$PROTOCOL" --client-type "$CLIENT_TYPE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${REPLICA_TRACE+--replica-trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} \
+			-p "$PROTOCOL" --client-type "$CLIENT_TYPE" -P "$STAT_PERIOD" -B "$BURST" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${REPLICA_TRACE+--replica-trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
 	ret=$?
 

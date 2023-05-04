@@ -23,6 +23,7 @@ OPTS=(
 	CPUPROFILE//cpuprofile/false
 	MEMPROFILE//memprofile/false
 	TRACE//trace/false
+	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
 )
 opt_parse OPTS "$0" "$@"
 
@@ -79,7 +80,7 @@ ps ax > "processes-$ID-$(hostname).out"
 set +e
 set -x
 
-"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} &
+"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} --cryptoImplType "${CRYPTO_IMPL_TYPE}" &
 bench_pid=$!
 
 set +x
