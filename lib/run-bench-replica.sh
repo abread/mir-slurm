@@ -32,7 +32,7 @@ sync
 [[ -d "$OUTPUT_DIR" ]] || panic "OUTPUT_DIR does not exist or is not a directory"
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
 
-ID="$(grep -E "/dns4/$(hostname)/" "${MEMBERSHIP_PATH}" | cut -d' ' -f1)"
+ID="$(cat "${MEMBERSHIP_PATH}" | jq -r "(.validators | map(select(.net_addr == '/dns4/$(hostname)/tcp/${MIR_PORT}')))[0].addr")"
 [[ -n "$ID" ]] || panic "could not compute replica ID for $(hostname)"
 
 echo "$(hostname) has ID $ID" >&2
@@ -66,7 +66,7 @@ ls "$REAL_OUTPUT_DIR" >/dev/null || true
 sync
 
 (
-NODES="$(cat "$MEMBERSHIP_PATH" | cut -d' ' -f2 | sed -E 's ^/dns4/([^/]+).*$ \1 ')"
+NODES="$(cat "$MEMBERSHIP_PATH" | jq -r '.validators[].net_addr')"
 for n in $NODES; do
 	echo "$n"
 	ping -c 5 "$n"
@@ -96,9 +96,9 @@ cleanup() {
 
 	rm "${OUTPUT_DIR}/${BENCH_PATH}"
 	rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
-	
+
 	sleep "$ID" # stagger writes
-	
+
 	sync
 	ls "$REAL_OUTPUT_DIR" >/dev/null || true
 	sync
@@ -109,7 +109,7 @@ cleanup() {
 		echo "could not save output. stored at ${OUTPUT_DIR}"
 		[ "$exit_code" -eq 0 ] && exit_code=1
 	fi
-	
+
 	# try to ensure all files are written before exiting
 	sync
 

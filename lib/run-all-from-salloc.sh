@@ -67,18 +67,31 @@ parse_slurm_nodelist() {
 
 [[ -d "$OUTPUT_DIR" ]] || panic "output dir doesn't exist"
 
-MIR_PORT=4242
+export MIR_PORT=4242
 REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
 MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # generate membership list
 [[ ! -f "$MEMBERSHIP_PATH" ]] || panic "membership file already exists"
 
+echo '{ "configuration_number": 0, "validators": [' > "$MEMBERSHIP_PATH"
+
 REPLICA_ID=0
 for hostname in $REPLICA_NODES; do
-	echo "${REPLICA_ID} /dns4/${hostname}/tcp/${MIR_PORT}" >> "$MEMBERSHIP_PATH"
+	[[ $REPLICA_ID -gt 0 ]] && echo -n ',' >> "$MEMBERSHIP_PATH"
+
+	cat <<-EOS >> "$MEMBERSHIP_PATH"
+		{
+			"addr": "${REPLICA_ID}",
+			"net_addr": "/dns4/${hostname}/tcp/${MIR_PORT}",
+			"weight": 0
+		}
+	EOS
+
 	REPLICA_ID=$(( REPLICA_ID + 1 ))
 done
+echo ']}' >> "$MEMBERSHIP_PATH"
+
 
 RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
 RUN_BENCH_CLIENT="$(dirname "$0")/run-bench-client.sh"
