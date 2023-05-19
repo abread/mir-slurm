@@ -43,14 +43,15 @@ class ExpParameter:
 EXP_PARAMETERS = [
     ExpParameter('protocol', 'p', lambda x: x),
     ExpParameter('f', 'f', int),
-    ExpParameter('n_clients', 'c', int, 8),
+    ExpParameter('n_clients', 'c', int, 24),
     ExpParameter('intended_load_tps', 'l', int),
-    ExpParameter('cooldown_time_sec', 'C', int, 60),
+    ExpParameter('cooldown_time_sec', 'C', int, 45),
     ExpParameter('batch_size', 'b', int),
     ExpParameter('stat_period_sec', 'P', int, 1),
     ExpParameter('burst_size', 'B', int, 1024),
     ExpParameter('load_duration_sec', 'T', int, 120),
     ExpParameter('req_size', 's', int, 256),
+    ExpParameter('runno', 'i', int, 0),
 ]
 assert len(set(ep.shortname for ep in EXP_PARAMETERS)) == len(EXP_PARAMETERS)
 assert len(set(ep.name for ep in EXP_PARAMETERS)) == len(EXP_PARAMETERS)
@@ -151,6 +152,11 @@ STAT_FIELDS = [
     StatField('mem_free_count', 'memFrees', int, last),
     StatField('mem_pause_total_ns', 'memPauseTotalNs', int, last),
     StatField('mem_pause_count', 'memNumGC', int, last),
+    StatField('mempool_batch_count', 'mempoolNewBatches', int, sum_combiner),
+    StatField('ag_round_deliver_count', 'agRoundDelivers', int, sum_combiner),
+    StatField('ag_round_false_deliver_count', 'agRoundFalseDelivers', int, sum_combiner),
+    StatField('bc_deliver_count', 'bcDelivers', int, sum_combiner),
+    StatField('tc_queue_size', 'threshQueueSize', int, None),
 ]
 assert len(set(x.name for x in STAT_FIELDS)) == len(STAT_FIELDS)
 assert len(set(x.mir_name for x in STAT_FIELDS)) == len(STAT_FIELDS)
@@ -160,8 +166,14 @@ STAT_FIELDS_BY_MIR_NAME = {f.mir_name:f for f in STAT_FIELDS}
 def read_raw_replica_stats(exp_dir: str, replica: int):
     with open(f'{ROOT}/{exp_dir}/{replica}.csv', 'r') as file:
         reader = csv.DictReader(file)
+        st = 0
         for rec in reader:
-            yield rec
+            if st == 0 and rec['nrReceived'] == '1':
+                st = 1 # observed test tx
+            elif st == 1 and rec['nrReceived'] != '0':
+                st = 2 # load started
+            if st == 2:
+                yield rec
 
 def parse_replica_stats(raw_stats_it):
     record = {field.name:None for field in filter(lambda f: f.combiner is not None, STAT_FIELDS)}
@@ -196,6 +208,7 @@ COMBINED_REPLICA_STATS_FIELDS['mem_free_count'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_pause_total_ns'].combiner = sum_combiner
 COMBINED_REPLICA_STATS_FIELDS['mem_pause_count'].combiner = sum_combiner
 del COMBINED_REPLICA_STATS_FIELDS['ts_ms']
+del COMBINED_REPLICA_STATS_FIELDS['tc_queue_size']
 
 def combine_replica_stats(replica_stats_it):
     record = {field.name:None for field in COMBINED_REPLICA_STATS_FIELDS.values()}
