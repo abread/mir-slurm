@@ -121,7 +121,7 @@ CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
 CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.log"
 CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.err"
 srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -t "$CLIENT_TYPE" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v} ${CLIENT_CPUPROFILE:+--cpuprofile} ${CLIENT_MEMPROFILE:+--memprofile}
+	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -t "$CLIENT_TYPE" -o "$OUTPUT_DIR" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v} ${CLIENT_CPUPROFILE:+--cpuprofile} ${CLIENT_MEMPROFILE:+--memprofile}
 
 echo "$(date): clients done, cooling down" >&2
 sleep "$COOLDOWN"

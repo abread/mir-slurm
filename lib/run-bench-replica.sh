@@ -45,7 +45,7 @@ BENCH_PATH="$(basename "$BENCH_PATH")"
 cp "${MEMBERSHIP_PATH}" "${OUTPUT_DIR}/"
 MEMBERSHIP_PATH="$(basename "$MEMBERSHIP_PATH")"
 
-STATSFILE="${ID}.csv"
+STATSFILE="replica-${ID}.csv"
 [[ -f "${REAL_OUTPUT_DIR}/$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
 
 CPUPROFILE_PATH="replica-${ID}.cpuprof"
