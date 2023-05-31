@@ -85,7 +85,7 @@ check_run_ok() {
 
 	case "$CLIENT_TYPE" in
 		dummy)
-			if [[ "$(cat "$outdir"/replicea-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
+			if [[ "$(cat "$outdir"/replica-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
 				echo "bad run: #received txs lower than expected" >&2
 				return 1
 			fi
