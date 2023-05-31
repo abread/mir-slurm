@@ -85,13 +85,13 @@ check_run_ok() {
 
 	case "$CLIENT_TYPE" in
 		dummy)
-			if [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
+			if [[ "$(cat "$outdir"/replicea-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
 				echo "bad run: #received txs lower than expected" >&2
 				return 1
 			fi
 			;;
 		rr)
-			if [[ "$(cat "$outdir"/*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * DURATION * 99 ) / 100 )) ]]; then
+			if [[ "$(cat "$outdir"/replica-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * DURATION * 99 ) / 100 )) ]]; then
 				echo "bad run: #received txs lower than expected" >&2
 				return 1
 			fi
@@ -102,11 +102,21 @@ check_run_ok() {
 	esac
 
 	for i in $(seq 0 $(( N_SERVERS - 1))); do
-		if [[ ! -f "$outdir/$i.csv" ]]; then
+		if [[ ! -f "$outdir/replica-$i.csv" ]]; then
 			echo "bad run: replica $i has no stats" >&2
 			return 1
-		elif [[ $(wc -l < "$outdir/$i.csv") -le 2 ]]; then
+		elif [[ $(wc -l < "$outdir/replica-$i.csv") -le 2 ]]; then
 			echo "bad run: replica $i has almost no stats (<=2 lines) " >&2
+			return 1
+		fi
+	done
+	
+	for i in $(seq 0 $(( N_CLIENTS - 1))); do
+		if [[ ! -f "$outdir/client-$i.csv" ]]; then
+			echo "bad run: client $i has no stats" >&2
+			return 1
+		elif [[ $(wc -l < "$outdir/client-$i.csv") -le 2 ]]; then
+			echo "bad run: client $i has almost no stats (<=2 lines) " >&2
 			return 1
 		fi
 	done
