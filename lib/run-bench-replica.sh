@@ -80,7 +80,7 @@ ps ax > "processes-$ID-$(hostname).out"
 set +e
 set -x
 
-"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} --cryptoImplType "${CRYPTO_IMPL_TYPE}" &
+"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "${REAL_OUTPUT_DIR}/$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} --cryptoImplType "${CRYPTO_IMPL_TYPE}" &
 bench_pid=$!
 
 set +x
