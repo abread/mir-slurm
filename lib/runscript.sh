@@ -41,6 +41,7 @@ mkdir "$OUTPUT_DIR"
 cp --reflink=auto -a "$(dirname "${BASH_SOURCE[0]}")" "${OUTPUT_DIR}/scripts-saved"
 cp --reflink=auto "$BENCH_PATH" "${OUTPUT_DIR}/scripts-saved/bench"
 cp --reflink=auto "$(dirname "${BASH_SOURCE[0]}")/../process.py" "${OUTPUT_DIR}/"
+cp --reflink=auto "$(dirname "${BASH_SOURCE[0]}")/../process-client.py" "${OUTPUT_DIR}/"
 
 tee "${OUTPUT_DIR}/Makefile" <<EOF
 OUTPUT_DIR := $(realpath "$OUTPUT_DIR")
