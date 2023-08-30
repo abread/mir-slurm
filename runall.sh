@@ -4,7 +4,10 @@ set -e
 # ensure mir bench is up-to-date
 (
 	cd "${CLUSTER_HOME:-..}/mir"
-	srun --cpus-per-task=4 -n1 -- make bin/bench
+	srun --exclusive -N1 -- nix shell nixpkgs#go_1_20 -c make bin/bench
+	sync
+	sleep 2
+	sync
 )
 sync
 
