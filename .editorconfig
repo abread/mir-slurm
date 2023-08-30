@@ -6,4 +6,5 @@ insert_final_newline = true
 charset = utf-8
 
 [*.sh]
-indent_style = tab # to make Makefile syntax easy to embed
+indent_style = tab
+# ^ to make Makefile syntax easy to embed
