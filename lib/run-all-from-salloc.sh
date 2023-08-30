@@ -98,18 +98,12 @@ RUN_BENCH_CLIENT="$(dirname "$0")/run-bench-client.sh"
 
 # start replicas
 echo "$(date): starting replicas" >&2
-REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.log"
-REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%t-%N.err"
+REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%n-%N.log"
+REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%n-%N.err"
 srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
 	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} ${REPLICA_TRACE:+--trace} --crypto-impl-type "${CRYPTO_IMPL_TYPE}" &
 
 sleep 10 # give them some time to start up
-
-# send a single initial request before continuing
-# this ensures all sockets are properly connected between replicas
-"$BENCH_PATH" client -t dummy -i 9999 -m "$MEMBERSHIP_PATH" -r 0.1 -T 1s
-
-sleep 5 # give them some time to wind down from the initial request
 
 # check if replicas are still alive
 jobs &>/dev/null # let jobs report that it's done (if it finished early)
@@ -118,8 +112,8 @@ jobs &>/dev/null # let jobs report that it's done (if it finished early)
 echo "$(date): starting clients" >&2
 # run client nodes to completion
 CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
-CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.log"
-CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%t-%N.err"
+CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%n-%N.log"
+CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%n-%N.err"
 srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
 	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -t "$CLIENT_TYPE" -o "$OUTPUT_DIR" -b "$BURST" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v} ${CLIENT_CPUPROFILE:+--cpuprofile} ${CLIENT_MEMPROFILE:+--memprofile}
 
