@@ -16,7 +16,6 @@ OPTS=(
 	CLIENT_TYPE/t/client-type/dummy
 	OUTPUT_DIR/o/outputDir/
 	RATE/r/rate/
-	BURST/b/burst/
 	DURATION/T/duration/
 	REQ_SIZE/s/reqSize/
 
@@ -47,7 +46,7 @@ MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
 set +e
 set -x
 
-"$BENCH_PATH" client -t "$CLIENT_TYPE" -o "$STATSFILE" -b "$BURST" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
+"$BENCH_PATH" client -t "$CLIENT_TYPE" -o "$STATSFILE" -T "${DURATION}s" -r "$RATE" -s "$REQ_SIZE" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE}
 exit_code=$?
 
 echo "Exit code: $exit_code" >&2
