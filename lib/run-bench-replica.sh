@@ -122,7 +122,8 @@ stop_bench_and_cleanup() {
 
 	echo "$(date): stopping node" >&2
 	kill -TERM $bench_pid || true
-	wait
+	( sleep 30; kill -9 $bench_pid ) &
+	wait $bench_pid
 	exit_code=$?
 	echo "node stopped" >&2
 
