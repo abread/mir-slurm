@@ -57,7 +57,7 @@ run_make() {
 	sync
 
 	cd "$OUTPUT_DIR"
-	exec make -j "$JOBS"
+	exec make -j "$JOBS" -k
 }
 trap run_make exit
 
