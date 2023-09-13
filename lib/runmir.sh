@@ -117,6 +117,9 @@ check_run_ok() {
 		elif [[ $(wc -l < "$outdir/client-$i.csv") -le 2 ]]; then
 			echo "bad run: client $i has almost no stats (<=2 lines) " >&2
 			return 1
+		elif [[ $(cat "$outdir/client-$i.csv" | tail -n+2 | cut -d, -f2 | paste -sd+ | bc) -le 5 ]]; then
+			echo "bad run: client $i has almost no delivered txs (<= 5)" >&2
+			return 1
 		fi
 	done
 }
