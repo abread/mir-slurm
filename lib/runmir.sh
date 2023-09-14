@@ -3,7 +3,7 @@ set -e
 
 source "$(dirname "$0")/opt-parser.sh"
 
-MAX_ATTEMPTS="${MAX_ATTEMPTS:-5}"
+MAX_ATTEMPTS="${MAX_ATTEMPTS:-3}"
 RETRY_COOLDOWN="${RETRY_COOLDOWN:-30}"
 
 DEFAULT_OUTPUT_DIR="$(basename "$0"):$(date +"%F_%R:%S"):$(echo "$@" | tr ' ' ':')"
