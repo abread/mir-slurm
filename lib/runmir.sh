@@ -39,7 +39,7 @@ SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 
 N=$(( 3 * F + 1 ))
 
-SERVER_NODE_SELECTOR=( -C 'lab1|lab7' )
+SERVER_NODE_SELECTOR=( -C 'lab5' )
 
 check_run_ok() {
 	local i="$1"
