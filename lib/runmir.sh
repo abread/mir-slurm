@@ -116,7 +116,7 @@ try_run() {
 
 	export F
 	salloc \
-		"${SERVER_NODE_SELECTOR[@]}" -n "$N" --cpus-per-task=4 --mem=0 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
+		"${SERVER_NODE_SELECTOR[@]}" -n "$N" --cpus-per-task=4 --mem=0 --ntasks-per-node=1 --exclusive -t $EXP_DURATION \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" \
 		-c "$N_CLIENTS" -b "$BATCH_SIZE" -p "$PROTOCOL" -D "$DURATION" -s "$REQ_SIZE" --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
  		${VERBOSE+-v} ${CPUPROFILE:+--cpuprofile} ${MEMPROFILE:+--memprofile} ${TRACE+--trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} \
