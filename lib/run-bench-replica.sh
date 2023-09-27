@@ -38,11 +38,11 @@ REAL_OUTPUT_DIR="${OUTPUT_DIR}"
 OUTPUT_DIR="$(mktemp -d /tmp/runmir.XXXXXXXXX)"
 
 cp "${BENCH_PATH}" "${OUTPUT_DIR}/"
-BENCH_PATH="$(basename "$BENCH_PATH")"
+BENCH_PATH="./$(basename "$BENCH_PATH")"
 cp "${MEMBERSHIP_PATH}" "${OUTPUT_DIR}/"
-MEMBERSHIP_PATH="$(basename "$MEMBERSHIP_PATH")"
+MEMBERSHIP_PATH="./$(basename "$MEMBERSHIP_PATH")"
 cp "${CONFIG_PATH}" "${OUTPUT_DIR}/"
-CONFIG_PATH="$(basename "$CONFIG_PATH")"
+CONFIG_PATH="./$(basename "$CONFIG_PATH")"
 
 REPLICA_STATSFILE="replica-${ID}.csv"
 CLIENT_STATSFILE="client-${ID}.csv"
@@ -56,9 +56,9 @@ for f in $REPLICA_STATSFILE $CLIENT_STATSFILE $NET_STATSFILE $RESULTS_FILE $CPUP
 done
 
 
-CPUPROFILE="${CPUPROFILE+--cpuprofile $CPUPROFILE_PATH}"
-MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
-TRACE="${TRACE+--traceFile trace-$ID.csv}"
+CPUPROFILE="${CPUPROFILE+--cpuprofile '${OUTPUT_DIR}/${CPUPROFILE_PATH}'}"
+MEMPROFILE="${MEMPROFILE+--memprofile '${OUTPUT_DIR}/${MEMPROFILE_PATH}'}"
+TRACE="${TRACE+--traceFile '${OUTPUT_DIR}/trace-${ID}.csv'}"
 #TRACE="${TRACE+--traceFile trace-$ID.csv --enableOTLP}"
 
 export OTEL_SERVICE_NAME="F=$F,node$ID"
