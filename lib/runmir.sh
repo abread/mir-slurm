@@ -20,7 +20,7 @@ OPTS=(
 	F/f/max-byz-faults/
 	N_CLIENTS/c/num-clients/1
 	BATCH_SIZE/b/batchSize/
-	DURATION/T/duration/120
+	DURATION/D/duration/120
 	REQ_SIZE/s/reqSize/256
 	VERBOSE/v/verbose/false
 	CPUPROFILE//cpuprofile/false
@@ -118,7 +118,7 @@ try_run() {
 	salloc \
 		"${SERVER_NODE_SELECTOR[@]}" -n "$N" --cpus-per-task=4 --mem=0 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
 		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" \
-		-c "$N_CLIENTS" -b "$BATCH_SIZE" -p "$PROTOCOL" -T "$DURATION" -s "$REQ_SIZE" --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
+		-c "$N_CLIENTS" -b "$BATCH_SIZE" -p "$PROTOCOL" -D "$DURATION" -s "$REQ_SIZE" --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
  		${VERBOSE+-v} ${CPUPROFILE:+--cpuprofile} ${MEMPROFILE:+--memprofile} ${TRACE+--trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
 	ret=$?
