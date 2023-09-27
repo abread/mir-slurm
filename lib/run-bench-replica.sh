@@ -39,8 +39,6 @@ OUTPUT_DIR="$(mktemp -d /tmp/runmir.XXXXXXXXX)"
 
 cp "${BENCH_PATH}" "${OUTPUT_DIR}/"
 BENCH_PATH="./$(basename "$BENCH_PATH")"
-cp "${MEMBERSHIP_PATH}" "${OUTPUT_DIR}/"
-MEMBERSHIP_PATH="./$(basename "$MEMBERSHIP_PATH")"
 cp "${CONFIG_PATH}" "${OUTPUT_DIR}/"
 CONFIG_PATH="./$(basename "$CONFIG_PATH")"
 
@@ -85,7 +83,7 @@ ps ax > "processes-$ID-$(hostname).out"
 set +e
 set -x
 
-"$BENCH_PATH" node -i "$ID" -m "$MEMBERSHIP_PATH" -c "$CONFIG_PATH" \
+"$BENCH_PATH" node -i "$ID" -c "$CONFIG_PATH" \
 	--replica-stat-file "${OUTPUT_DIR}/$REPLICA_STATSFILE" --client-stat-file "${OUTPUT_DIR}/$CLIENT_STATSFILE" --net-stat-file "${OUTPUT_DIR}/$NET_STATSFILE" --summary-stat-file "${OUTPUT_DIR}/$RESULTS_FILE" \
 	${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE}
 exit_code=$?
@@ -96,7 +94,6 @@ set -e
 echo "bench exited with code $exit_code" >&2
 
 rm "${OUTPUT_DIR}/${BENCH_PATH}"
-rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
 rm "${OUTPUT_DIR}/${CONFIG_PATH}"
 
 sync
