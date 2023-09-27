@@ -12,18 +12,14 @@ source "$(dirname "$0")/opt-parser.sh"
 # shellcheck disable=SC2034
 OPTS=(
 	BENCH_PATH/M/mirBenchPath/./bench
-
-	PROTOCOL/p/protocol/
-	BATCH_SIZE/b/batchSize/
 	OUTPUT_DIR/o/outputDir/
-	STAT_PERIOD/P/statPeriod/1
 
 	MEMBERSHIP_PATH/m/membership/
+	CONFIG_PATH/c/config/
 	VERBOSE/v/verbose/false
 	CPUPROFILE//cpuprofile/false
 	MEMPROFILE//memprofile/false
 	TRACE//trace/false
-	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
 )
 opt_parse OPTS "$0" "$@"
 
@@ -31,6 +27,7 @@ sync
 [[ -x "$BENCH_PATH" ]] || panic "BENCH_PATH does not exist or is not an executable"
 [[ -d "$OUTPUT_DIR" ]] || panic "OUTPUT_DIR does not exist or is not a directory"
 [[ -f "$MEMBERSHIP_PATH" ]] || panic "MEMBERSHIP_PATH does not exist"
+[[ -f "$CONFIG_PATH" ]] || panic "CONFIG_PATH does not exist"
 
 ID="$(cat "${MEMBERSHIP_PATH}" | jq -r '(.validators | map(select(.net_addr == "'"/dns4/$(hostname)/tcp/${MIR_PORT}"'")))[0].addr')"
 [[ -n "$ID" ]] || panic "could not compute replica ID for $(hostname)"
@@ -44,12 +41,20 @@ cp "${BENCH_PATH}" "${OUTPUT_DIR}/"
 BENCH_PATH="$(basename "$BENCH_PATH")"
 cp "${MEMBERSHIP_PATH}" "${OUTPUT_DIR}/"
 MEMBERSHIP_PATH="$(basename "$MEMBERSHIP_PATH")"
+cp "${CONFIG_PATH}" "${OUTPUT_DIR}/"
+CONFIG_PATH="$(basename "$CONFIG_PATH")"
 
-STATSFILE="replica-${ID}.csv"
-[[ -f "${REAL_OUTPUT_DIR}/$STATSFILE" ]] && panic "stats file '${STATSFILE}' already exists"
-
+REPLICA_STATSFILE="replica-${ID}.csv"
+CLIENT_STATSFILE="client-${ID}.csv"
+NET_STATSFILE="net-${ID}.csv"
+RESULTS_FILE="results-${ID}.json"
 CPUPROFILE_PATH="replica-${ID}.cpuprof"
 MEMPROFILE_PATH="replica-${ID}.memprof"
+
+for f in $REPLICA_STATSFILE $CLIENT_STATSFILE $NET_STATSFILE $RESULTS_FILE $CPUPROFILE_PATH $MEMPROFILE_PATH; do
+	[[ -f "${REAL_OUTPUT_DIR}/$f" ]] && panic "output file '${STATSFILE}' already exists"
+done
+
 
 CPUPROFILE="${CPUPROFILE+--cpuprofile $CPUPROFILE_PATH}"
 MEMPROFILE="${MEMPROFILE+--memprofile $MEMPROFILE_PATH}"
@@ -80,58 +85,41 @@ ps ax > "processes-$ID-$(hostname).out"
 set +e
 set -x
 
-"./$BENCH_PATH" node -b "$BATCH_SIZE" -p "$PROTOCOL" -o "${REAL_OUTPUT_DIR}/$STATSFILE" --statPeriod "${STAT_PERIOD}s" -i "$ID" -m "$MEMBERSHIP_PATH" ${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE} --cryptoImplType "${CRYPTO_IMPL_TYPE}" &
-bench_pid=$!
+"$BENCH_PATH" node -i "$ID" -m "$MEMBERSHIP_PATH" -c "$CONFIG_PATH" \
+	--replica-stat-file "${OUTPUT_DIR}/$REPLICA_STATSFILE" --client-stat-file "${OUTPUT_DIR}/$CLIENT_STATSFILE" --net-stat-file "${OUTPUT_DIR}/$NET_STATSFILE" --summary-stat-file "${OUTPUT_DIR}/$RESULTS_FILE" \
+	${VERBOSE+-v} ${CPUPROFILE} ${MEMPROFILE} ${TRACE}
+exit_code=$?
 
 set +x
 set -e
 
-cleanup() {
-	exit_code=$1
-	echo "Exit code: $exit_code" >&2
+echo "bench exited with code $exit_code" >&2
 
-	sync
-	ls "$REAL_OUTPUT_DIR" >/dev/null || true
-	sync
+rm "${OUTPUT_DIR}/${BENCH_PATH}"
+rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
+rm "${OUTPUT_DIR}/${CONFIG_PATH}"
 
-	rm "${OUTPUT_DIR}/${BENCH_PATH}"
-	rm "${OUTPUT_DIR}/${MEMBERSHIP_PATH}"
+sync
+ls "$REAL_OUTPUT_DIR" >/dev/null || true
+sync
 
-	sleep "$ID" # stagger writes
+sleep "$ID" # stagger writes
 
-	sync
-	ls "$REAL_OUTPUT_DIR" >/dev/null || true
-	sync
+sync
+ls "$REAL_OUTPUT_DIR" >/dev/null || true
+sync
 
-	if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
-		rmdir "${OUTPUT_DIR}"
-	else
-		echo "could not save output. stored at ${OUTPUT_DIR}"
-		[ "$exit_code" -eq 0 ] && exit_code=1
-	fi
+if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
+	rmdir "${OUTPUT_DIR}"
+else
+	echo "could not save output. stored at ${OUTPUT_DIR}" >&2
+	[ "$exit_code" -eq 0 ] && exit_code=1
+fi
 
-	# try to ensure all files are written before exiting
-	sync
+# try to ensure all files are written before exiting
+sync
+sleep 5
+sync
 
-	trap - EXIT SIGINT SIGTERM
-	echo "exiting with $exit_code" >&2
-	exit $exit_code
-}
-stop_bench_and_cleanup() {
-	trap '' EXIT SIGINT SIGTERM # ignore during cleanup
-
-	echo "$(date): stopping node" >&2
-	kill -TERM $bench_pid || true
-	( sleep 30; kill -9 $bench_pid ) &
-	wait $bench_pid
-	exit_code=$?
-	echo "node stopped" >&2
-
-	cleanup $exit_code
-}
-trap stop_bench_and_cleanup EXIT SIGINT SIGTERM
-
-wait
-exit_code=$?
-trap '' EXIT SIGINT SIGTERM # ignore during cleanup
-cleanup $exit_code
+echo "exiting with $exit_code" >&2
+exit $exit_code

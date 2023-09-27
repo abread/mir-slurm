@@ -72,14 +72,11 @@ runone() {
 
 		[[ "$key" =~ ^-[a-zA-Z-]+$ ]] || (echo "bad flag $key" >&2; return 1)
 		[[ "$key" == "-v" ]] && continue
-		[[ "$key" == "--verbose" ]] && continue
 		[[ "$key" == "-V" ]] && continue
-		[[ "$key" == "--client-verbose" ]] && continue
-		[[ "$key" == "--replica-cpuprofile" ]] && continue
-		[[ "$key" == "--replica-memprofile" ]] && continue
-		[[ "$key" == "--replica-trace" ]] && continue
-		[[ "$key" == "--client-cpuprofile" ]] && continue
-		[[ "$key" == "--client-memprofile" ]] && continue
+		[[ "$key" == "--verbose" ]] && continue
+		[[ "$key" == "--cpuprofile" ]] && continue
+		[[ "$key" == "--memprofile" ]] && continue
+		[[ "$key" == "--trace" ]] && continue
 
 		key="${key#-}"
 

@@ -14,22 +14,15 @@ OPTS=(
 	BENCH_PATH/M/mirBenchPath/
 	OUTPUT_DIR/o/outputDir/
 
-	PROTOCOL/p/replica-protocol/
-	CLIENT_TYPE//client-type/dummy
-	N_CLIENTS/c/num-clients/8
-	LOAD/l/load/
-	COOLDOWN/C/cooldown/60
-	BATCH_SIZE/b/replica-batchSize/
-	STAT_PERIOD/P/replica-statPeriod/1
-	DURATION/T/client-duration/120
-	REQ_SIZE/s/client-reqSize/256
-	REPLICA_VERBOSE/v/replica-verbose/false
-	CLIENT_VERBOSE/V/client-verbose/false
-	REPLICA_CPUPROFILE//replica-cpuprofile/false
-	REPLICA_TRACE//replica-trace/false
-	REPLICA_MEMPROFILE//replica-memprofile/false
-	CLIENT_CPUPROFILE//client-cpuprofile/false
-	CLIENT_MEMPROFILE//client-memprofile/false
+	PROTOCOL/p/protocol/
+	N_CLIENTS/c/num-clients/1
+	BATCH_SIZE/b/batchSize/
+	DURATION/D/duration/120
+	REQ_SIZE/s/reqSize/256
+	VERBOSE/v/verbose/false
+	CPUPROFILE//cpuprofile/false
+	TRACE//trace/false
+	MEMPROFILE//memprofile/false
 	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
 )
 opt_parse OPTS "$0" "$@"
@@ -61,13 +54,12 @@ parse_slurm_nodelist() {
 	echo "$nodes" | tr -d '{}'
 }
 
-[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_0" ]] || panic "missing slurm het group 0"
-[[ -n "$SLURM_JOB_NODELIST_HET_GROUP_1" ]] || panic "missing slurm het group 1"
+[[ -n "$SLURM_JOB_NODELIST" ]] || panic "missing slurm job nodelist"
 
 [[ -d "$OUTPUT_DIR" ]] || panic "output dir doesn't exist"
 
 export MIR_PORT=4242
-REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST_HET_GROUP_0")"
+REPLICA_NODES="$(parse_slurm_nodelist "$SLURM_JOB_NODELIST")"
 MEMBERSHIP_PATH="${OUTPUT_DIR}/membership"
 
 # generate membership list
@@ -91,38 +83,14 @@ for hostname in $REPLICA_NODES; do
 done
 echo ']}' >> "$MEMBERSHIP_PATH"
 
+CONFIG_PATH="${OUTPUT_DIR}/config.json"
+"$BENCH_PATH" params -m "$MEMBERSHIP_PATH" -o "$CONFIG_PATH" TxGen.ClientID '' TxGen.PayloadSize "$REQ_SIZE" TxGen.NumClients "$N_CLIENTS" Duration "${DURATION}s" Trantor.Mempool.MaxTransactionsInBatch "$BATCH_SIZE" Trantor.Protocol "$PROTOCOL" CryptoImpl "$CRYPTO_IMPL_TYPE" ThreshCryptoImpl "$CRYPTO_IMPL_TYPE"
 
 RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
-RUN_BENCH_CLIENT="$(dirname "$0")/run-bench-client.sh"
 
 # start replicas
 echo "$(date): starting replicas" >&2
 REPLICA_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%n-%N.log"
 REPLICA_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/replica-%n-%N.err"
-srun --kill-on-bad-exit=1 --het-group=0 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -b "$BATCH_SIZE" -p "$PROTOCOL" -o "$OUTPUT_DIR" --statPeriod "$STAT_PERIOD" -m "$MEMBERSHIP_PATH" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} ${REPLICA_TRACE:+--trace} --crypto-impl-type "${CRYPTO_IMPL_TYPE}" &
-
-sleep 10 # give them some time to start up
-
-# check if replicas are still alive
-jobs &>/dev/null # let jobs report that it's done (if it finished early)
-[[ $(jobs | wc -l) -ne 1 ]] && panic "servers terminated early"
-
-echo "$(date): starting clients" >&2
-# run client nodes to completion
-CLIENT_RATE="$(python -c "print(float(${LOAD})/${N_CLIENTS})")"
-CLIENT_OUT_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%n-%N.log"
-CLIENT_ERR_FILE_SPEC="${OUTPUT_DIR//%/%%}/client-%n-%N.err"
-srun --kill-on-bad-exit=1 --het-group=1 -n "$N_CLIENTS" -i none -o "$CLIENT_OUT_FILE_SPEC" -e "$CLIENT_ERR_FILE_SPEC" -- \
-	"$RUN_BENCH_CLIENT" -M "$BENCH_PATH" -t "$CLIENT_TYPE" -o "$OUTPUT_DIR" -T "$DURATION" -r "$CLIENT_RATE" -s "$REQ_SIZE" -m "$MEMBERSHIP_PATH" ${CLIENT_VERBOSE+-v} ${CLIENT_CPUPROFILE:+--cpuprofile} ${CLIENT_MEMPROFILE:+--memprofile}
-
-echo "$(date): clients done, cooling down" >&2
-sleep "$COOLDOWN"
-
-# check if replicas are still alive
-jobs &>/dev/null # let jobs report that it's done (if it finished early)
-[[ $(jobs | wc -l) -ne 1 ]] && panic "servers terminated early"
-
-# stop replicas
-scancel -s SIGINT "$SLURM_JOBID_HET_GROUP_0" || true
-wait
+srun --kill-on-bad-exit=1 -i none -o "$REPLICA_OUT_FILE_SPEC" -e "$REPLICA_ERR_FILE_SPEC" -- \
+	"$RUN_BENCH_REPLICA" -M "$BENCH_PATH" -o "$OUTPUT_DIR" -m "$MEMBERSHIP_PATH" -c "${CONFIG_PATH}" ${REPLICA_VERBOSE+-v} ${REPLICA_CPUPROFILE:+--cpuprofile} ${REPLICA_MEMPROFILE:+--memprofile} ${REPLICA_TRACE:+--trace}

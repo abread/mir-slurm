@@ -4,7 +4,8 @@ set -e
 source "$(dirname "$0")/opt-parser.sh"
 
 MAX_ATTEMPTS="${MAX_ATTEMPTS:-3}"
-RETRY_COOLDOWN="${RETRY_COOLDOWN:-30}"
+RETRY_COOLDOWN="${RETRY_COOLDOWN:-60}"
+STAT_PERIOD=5
 
 DEFAULT_OUTPUT_DIR="$(basename "$0"):$(date +"%F_%R:%S"):$(echo "$@" | tr ' ' ':')"
 DEFAULT_BENCH_PATH="$(dirname "$0")/../../mir/bin/bench"
@@ -15,23 +16,16 @@ OPTS=(
 	BENCH_PATH/M/mirBenchPath/"$DEFAULT_BENCH_PATH"
 	OUTPUT_DIR/o/outputDir/"$DEFAULT_OUTPUT_DIR"
 
-	PROTOCOL/p/replica-protocol/
-	CLIENT_TYPE//client-type/dummy
+	PROTOCOL/p/protocol/
 	F/f/max-byz-faults/
-	N_CLIENTS/c/num-clients/24
-	LOAD/l/load/
-	COOLDOWN/C/cooldown/30
-	BATCH_SIZE/b/replica-batchSize/
-	STAT_PERIOD/P/replica-statPeriod/1
-	DURATION/T/client-duration/120
-	REQ_SIZE/s/client-reqSize/256
-	REPLICA_VERBOSE/v/replica-verbose/false
-	CLIENT_VERBOSE/V/client-verbose/false
-	REPLICA_CPUPROFILE//replica-cpuprofile/false
-	REPLICA_MEMPROFILE//replica-memprofile/false
-	REPLICA_TRACE//replica-trace/false
-	CLIENT_CPUPROFILE//client-cpuprofile/false
-	CLIENT_MEMPROFILE//client-memprofile/false
+	N_CLIENTS/c/num-clients/1
+	BATCH_SIZE/b/batchSize/
+	DURATION/T/duration/120
+	REQ_SIZE/s/reqSize/256
+	VERBOSE/v/verbose/false
+	CPUPROFILE//cpuprofile/false
+	MEMPROFILE//memprofile/false
+	TRACE//replica-trace/false
 	CRYPTO_IMPL_TYPE//crypto-impl-type/pseudo
 
 	# not used for anything, just useful for running an experiment multiple times
@@ -39,17 +33,13 @@ OPTS=(
 )
 opt_parse OPTS "$0" "$@"
 
-[[ $F -lt 0 || $N_CLIENTS -le 0 || $RETRY_COOLDOWN -lt 0 || $COOLDOWN -lt 0 ]] && exit 1
+[[ $F -lt 0 || $N_CLIENTS -le 0 || $RETRY_COOLDOWN -lt 0 ]] && exit 1
 
 SALLOC_SCRIPT="$(dirname "$0")/run-all-from-salloc.sh"
 
-N_SERVERS=$(( 3 * F + 1 ))
+N=$(( 3 * F + 1 ))
 
 SERVER_NODE_SELECTOR=( -C 'lab1|lab7' )
-CLIENT_NODE_SELECTOR=( -x 'lab2p[1-20],lab1p[1-12],lab7p[1-9]' )
-
-# limit number of clients based on load
-[[ "$N_CLIENTS" -gt $(( LOAD / 256 + 1 )) ]] && N_CLIENTS=$(( LOAD / 256 + 1 ))
 
 check_run_ok() {
 	local i="$1"
@@ -59,7 +49,7 @@ check_run_ok() {
 	if [[ ! -f "$outdir/membership" ]]; then
 		echo "bad run: missing membership" >&2
 		return 1
-	elif [[ $(cat "$outdir/membership" | jq '.validators | length') -ne $N_SERVERS ]]; then
+	elif [[ $(cat "$outdir/membership" | jq '.validators | length') -ne $N ]]; then
 		echo "bad run: membership contains an unexpected number of replicas" >&2
 		return 1
 	elif [[ ! -f "$outdir/run.log" ]]; then
@@ -80,51 +70,41 @@ check_run_ok() {
 	elif grep "failed to CBOR marshal message:" "$outdir"/*.log >/dev/null; then
 		echo "bad run: found message marshalling error in logs/stdout" >&2
 		return 1
+	elif [[ "$(cat "$outdir"/replica-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( N * 10 )) ]]; then
+		echo "bad run: #delivered txs too low (<10/node)" >&2
+		return 1
 	fi
 
-	case "$CLIENT_TYPE" in
-		dummy)
-			if [[ "$(cat "$outdir"/replica-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * N_SERVERS * DURATION * 99 ) / 100 )) ]]; then
-				echo "bad run: #received txs lower than expected" >&2
-				return 1
-			fi
-			;;
-		rr)
-			if [[ "$(cat "$outdir"/replica-*.csv | cut -d, -f2 | grep -E '^[0-9]+$' | paste -s -d+ - | bc)" -lt $(( ( LOAD * DURATION * 99 ) / 100 )) ]]; then
-				echo "bad run: #received txs lower than expected" >&2
-				return 1
-			fi
-			;;
-		*)
-			echo "WARNING: unknown CLIENT_TYPE ${CLIENT_TYPE}. Not checking real load for ${outdir}" >&2
-			;;
-	esac
-
-	for i in $(seq 0 $(( N_SERVERS - 1))); do
+	for i in $(seq 0 $(( N - 1))); do
 		if [[ ! -f "$outdir/replica-$i.csv" ]]; then
 			echo "bad run: replica $i has no stats" >&2
 			return 1
 		elif [[ $(wc -l < "$outdir/replica-$i.csv") -le 2 ]]; then
 			echo "bad run: replica $i has almost no stats (<=2 lines) " >&2
 			return 1
-		fi
-	done
-	
-	for i in $(seq 0 $(( N_CLIENTS - 1))); do
-		if [[ ! -f "$outdir/client-$i.csv" ]]; then
-			echo "bad run: client $i has no stats" >&2
+		elif [[ ! -f "$outdir/client-$i.csv" ]]; then
+			echo "bad run: client for replica $i has no stats" >&2
 			return 1
 		elif [[ $(wc -l < "$outdir/client-$i.csv") -le 2 ]]; then
-			echo "bad run: client $i has almost no stats (<=2 lines) " >&2
+			echo "bad run: client for replica $i has almost no stats (<=2 lines) " >&2
 			return 1
-		elif [[ $(cat "$outdir/client-$i.csv" | tail -n+2 | cut -d, -f2 | paste -sd+ | bc) -le 5 ]]; then
-			echo "bad run: client $i has almost no delivered txs (<= 5)" >&2
+		elif [[ ! -f "$outdir/net-$i.csv" ]]; then
+			echo "bad run: net for replica $i has no stats" >&2
+			return 1
+		elif [[ $(wc -l < "$outdir/net-$i.csv") -le 2 ]]; then
+			echo "bad run: net for replica $i has almost no stats (<=2 lines) " >&2
+			return 1
+		elif [[ ! -f "$outdir/results-$i.json" ]]; then
+			echo "bad run: results for replica $i don't exist" >&2
+			return 1
+		elif [[ $(wc -l < "$outdir/results-$i.csv") -le 10 ]]; then
+			echo "bad run: results for replica $i is corrupted (<=10 lines) " >&2
 			return 1
 		fi
 	done
 }
 
-EXP_DURATION=$(( ( DURATION + COOLDOWN + 80 + N_SERVERS ) / 60 + 3 ))
+EXP_DURATION=$(( ( DURATION + N * 2 ) / 60 + 4 ))
 
 try_run() {
 	local i="$1"
@@ -136,10 +116,10 @@ try_run() {
 
 	export F
 	salloc \
-		"${SERVER_NODE_SELECTOR[@]}" -n "$N_SERVERS" --cpus-per-task=4 --mem=0 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
-		"${CLIENT_NODE_SELECTOR[@]}" -n "$N_CLIENTS" --cpus-per-task=1 --mem=0 --ntasks-per-node=4 --exclusive -t $EXP_DURATION -- \
-		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" -l "$LOAD" -C "$COOLDOWN" -c "$N_CLIENTS" -b "$BATCH_SIZE" \
-			-p "$PROTOCOL" --client-type "$CLIENT_TYPE" -P "$STAT_PERIOD" -T "$DURATION" -s "$REQ_SIZE" ${REPLICA_VERBOSE+-v} ${CLIENT_VERBOSE+-V} ${REPLICA_CPUPROFILE:+--replica-cpuprofile} ${REPLICA_MEMPROFILE:+--replica-memprofile} ${REPLICA_TRACE+--replica-trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} ${CLIENT_MEMPROFILE:+--client-memprofile} --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
+		"${SERVER_NODE_SELECTOR[@]}" -n "$N" --cpus-per-task=4 --mem=0 --ntasks-per-node=1 --exclusive -t $EXP_DURATION : \
+		"$SALLOC_SCRIPT" -M "$BENCH_PATH" -o "$(realpath "$wipdir")" \
+		-c "$N_CLIENTS" -b "$BATCH_SIZE" -p "$PROTOCOL" -T "$DURATION" -s "$REQ_SIZE" --crypto-impl-type "${CRYPTO_IMPL_TYPE}" \
+ 		${VERBOSE+-v} ${CPUPROFILE:+--cpuprofile} ${MEMPROFILE:+--memprofile} ${TRACE+--trace} ${CLIENT_CPUPROFILE:+--client-cpuprofile} \
 		> "${wipdir}/run.log" 2> "${wipdir}/run.err"
 	ret=$?
 
@@ -155,7 +135,7 @@ try_run() {
 	return $ret
 }
 
-for i in $(seq 0 "$MAX_ATTEMPTS"); do
+for i in $(seq 0 "$(( MAX_ATTEMPTS - 1 ))"); do
 	RUN_OUT_DIR="$(dirname "$OUTPUT_DIR")/${i},$(basename "$OUTPUT_DIR")"
 	if try_run "$i" && check_run_ok "$i"; then
 		mv "$RUN_OUT_DIR" "$OUTPUT_DIR"
