@@ -22,6 +22,7 @@ OPTS=(
 	OUTPUT_DIR/o/output-dir/"$DEFAULT_OUTPUT_DIR"
 	BENCH_PATH/b/bench-path/"$DEFAULT_BENCH_PATH"
 	JOBS/j/jobs/32
+	LOAD/l/load/1
 )
 
 # parse arguments
@@ -57,7 +58,7 @@ run_make() {
 	sync
 
 	cd "$OUTPUT_DIR"
-	exec make -j "$JOBS" -k
+	exec make -j "$JOBS" -l "$LOAD" -k
 }
 trap run_make exit
 
