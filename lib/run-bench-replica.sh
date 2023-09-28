@@ -80,6 +80,9 @@ done
 w > "otherusers-$ID-$(hostname).out"
 ps ax > "processes-$ID-$(hostname).out"
 
+# set soft mem limit 100MiB lower than the hard max
+export GOMEMLIMIT=10140MiB
+
 set +e
 set -x
 
