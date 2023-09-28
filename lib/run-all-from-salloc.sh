@@ -83,8 +83,10 @@ for hostname in $REPLICA_NODES; do
 done
 echo ']}' >> "$MEMBERSHIP_PATH"
 
+ALEA_INSTANCE_UID="$(python3 -c "import base64, hashlib; print(base64.encodebytes(hashlib.sha256(b'$RANDOM').digest()[:8]).decode('utf-8').strip())")"
+
 CONFIG_PATH="${OUTPUT_DIR}/config.json"
-"$BENCH_PATH" params -m "$MEMBERSHIP_PATH" -o "$CONFIG_PATH" TxGen.ClientID '' TxGen.PayloadSize "$REQ_SIZE" TxGen.NumClients "$N_CLIENTS" Duration "${DURATION}s" Trantor.Mempool.MaxTransactionsInBatch "$BATCH_SIZE" Trantor.Protocol "$PROTOCOL" CryptoImpl "$CRYPTO_IMPL_TYPE" ThreshCryptoImpl "$CRYPTO_IMPL_TYPE"
+"$BENCH_PATH" params -m "$MEMBERSHIP_PATH" -o "$CONFIG_PATH" TxGen.ClientID '' TxGen.PayloadSize "$REQ_SIZE" TxGen.NumClients "$N_CLIENTS" Duration "${DURATION}s" Trantor.Mempool.MaxTransactionsInBatch "$BATCH_SIZE" Trantor.Protocol "$PROTOCOL" CryptoImpl "$CRYPTO_IMPL_TYPE" Trantor.Alea.InstanceUID "$ALEA_INSTANCE_UID" CryptoSeed "$RANDOM" ThreshCryptoImpl "$CRYPTO_IMPL_TYPE"
 
 RUN_BENCH_REPLICA="$(dirname "$0")/run-bench-replica.sh"
 
