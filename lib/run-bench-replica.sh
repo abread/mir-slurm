@@ -96,14 +96,7 @@ echo "bench exited with code $exit_code" >&2
 rm "${OUTPUT_DIR}/${BENCH_PATH}"
 rm "${OUTPUT_DIR}/${CONFIG_PATH}"
 
-sync
-ls "$REAL_OUTPUT_DIR" >/dev/null || true
-sync
-
-sleep "$ID" # stagger writes
-
-sync
-ls "$REAL_OUTPUT_DIR" >/dev/null || true
+sleep $(( ID * 10 )) # stagger writes
 sync
 
 if mv "${OUTPUT_DIR}/"* "${REAL_OUTPUT_DIR}/"; then
@@ -115,7 +108,7 @@ fi
 
 # try to ensure all files are written before exiting
 sync
-sleep 5
+sleep 15
 sync
 
 echo "exiting with $exit_code" >&2

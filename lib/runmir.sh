@@ -97,14 +97,14 @@ check_run_ok() {
 		elif [[ ! -f "$outdir/results-$i.json" ]]; then
 			echo "bad run: results for replica $i don't exist" >&2
 			return 1
-		elif [[ $(wc -l < "$outdir/results-$i.csv") -le 10 ]]; then
+		elif [[ $(wc -l < "$outdir/results-$i.json") -le 10 ]]; then
 			echo "bad run: results for replica $i is corrupted (<=10 lines) " >&2
 			return 1
 		fi
 	done
 }
 
-EXP_DURATION=$(( ( DURATION + N * 2 ) / 60 + 4 ))
+EXP_DURATION=$(( ( DURATION + N * 30 ) / 60 + 1 ))
 
 try_run() {
 	local i="$1"
